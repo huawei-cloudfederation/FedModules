@@ -1,0 +1,18 @@
+{
+   "libraries":
+   [
+      {
+         "file": "../../FedModules/libFedModules.so",
+         "modules": 
+         [
+            {
+               "name": "mesos_fed_allocator_module" 
+            },
+            {
+               "name": "mesos_fed_comm_module"
+            }
+         ]
+      }
+   ]
+}
+
