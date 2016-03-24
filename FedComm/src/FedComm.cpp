@@ -1,4 +1,4 @@
-#include "FedCom.hpp"
+#include "FedComm.hpp"
 
 static Anonymous* createFedCommunicator(const Parameters& parameters)
 {
