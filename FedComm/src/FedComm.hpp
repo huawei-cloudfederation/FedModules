@@ -16,25 +16,19 @@ using namespace std;
 using namespace mesos;
 using mesos::modules::Anonymous;
 
+
 int fed_shared_var;
 //extern "C" int fed_get(void);
+std::map <string, bool> fed_offers_filter_table;
+
+void* PollGossiper(void*);
 
 
 class FedCommunication : public Anonymous
 {
-   public:
-   FedCommunication()
-   {
-      cout << "========== HUAWEI - FedCommunication Constructor" << endl;
-      cout << "========== HUAWEI - " << "fed_shared_var: " << fed_shared_var <<"   "  << &fed_shared_var  << endl;
-      fed_shared_var = 13;
-      //cout << "========== HUAWEI - " << "fed_get() : " << fed_get() << endl;
-   }
-
-   virtual ~FedCommunication()
-   {
-      cout << "========== HUAWEI - FedCommunication Destructor" << endl;
-   }
+    public:
+        FedCommunication();
+        virtual ~FedCommunication();
 };
 
 #endif // __MESOS_ANONYMOUS_COMMUNICATION_HPP__

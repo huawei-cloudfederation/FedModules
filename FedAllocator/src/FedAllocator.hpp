@@ -32,11 +32,14 @@ extern int fed_shared_var;
 
 class FederationAllocator : public HierarchicalDRFAllocatorProcess 
 {
-   public:
-   virtual ~FederationAllocator() {}
-   virtual void addFramework(const FrameworkID& frameworkId,
-		      const FrameworkInfo& frameworkInfo,
-		      const hashmap<SlaveID, Resources>& used);
+    public:
+        FederationAllocator();
+
+        virtual ~FederationAllocator() {}
+
+        virtual void addFramework(const FrameworkID& frameworkId,
+                                    const FrameworkInfo& frameworkInfo,
+                                    const hashmap<SlaveID, Resources>& used);
 };
 
 #endif // __MASTER_ALLOCATOR_MESOS_HIERARCHICAL_FEDALLOC_HPP__
