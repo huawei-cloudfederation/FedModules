@@ -30,7 +30,7 @@
 #include "tests/allocator.hpp"
 #include "tests/mesos.hpp"
 
-#include "/home/ubuntu/src/FedModules/FedAllocator/src/FedAllocator.cpp"
+#include "../FedAllocator.cpp"
 
 
 using mesos::internal::master::MIN_CPUS;
