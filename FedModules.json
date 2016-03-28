@@ -2,7 +2,7 @@
    "libraries":
    [
       {
-         "file": "./libFedModules.so",
+         "file": "../../FedModules/libFedModules.so",
          "modules": 
          [
             {
