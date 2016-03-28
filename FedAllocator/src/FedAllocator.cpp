@@ -1,13 +1,7 @@
 #include <iostream>
-#include <mesos/master/allocator.hpp>
-#include <mesos/module/allocator.hpp>
-#include <stout/try.hpp>
 #include <unistd.h>
 
 #include "FedAllocator.hpp"
-
-using namespace mesos;
-using mesos::master::allocator::Allocator;
 
 
 /*
@@ -22,17 +16,21 @@ void testit()
     while (1)
     {
         sleep (1);
+        
+        pthread_mutex_lock(&mutex_fed_offers_filter_table);
+        
         cout<<"Test allocation module. fed_shared_var: "<<fed_shared_var <<endl;
+
+        pthread_mutex_lock(&mutex_fed_offers_filter_table);
     }   
 }
 
-FederationAllocator::FederationAllocator()
+FederationAllocatorProcess::FederationAllocatorProcess()
 {
-    HierarchicalDRFAllocatorProcess();
+    ;
 }
 
-
-void FederationAllocator::addFramework(const FrameworkID& frameworkId, 
+void FederationAllocatorProcess::addFramework(const FrameworkID& frameworkId, 
                                         const FrameworkInfo& frameworkInfo, 
                                         const hashmap<SlaveID, Resources>& used)
 {
@@ -43,13 +41,13 @@ void FederationAllocator::addFramework(const FrameworkID& frameworkId,
     //cout << "========== HUAWEI - " << "fed_get() : " << fed_get() << endl;
 }
 
-static Allocator* createFedAllocator(const Parameters& parameters)
+static Allocator* createFederationAllocator(const Parameters& parameters)
 {
     cout << "========== HUAWEI - createAllocator()" << endl;
     cout << "========== HUAWEI - " << "fed_shared_var: " << fed_shared_var <<"   "  << &fed_shared_var  << endl;
     //cout << "========== HUAWEI - " << "fed_get() : " << fed_get() << endl;
     
-    Try<Allocator*> allocator = FilterOffersFedAlloc::create();
+    Try<Allocator*> allocator = FederationAllocator::create();
 
     if (allocator.isError()) 
     {
@@ -66,5 +64,5 @@ mesos::modules::Module<Allocator> mesos_fed_allocator_module(
     "parushuram.k@huawei.com",
     "Cloud Federation Allocator Module.",
     NULL,
-    createFedAllocator);
+    createFederationAllocator);
 

@@ -1,9 +1,10 @@
-#include <pthread.h>
+#include <iostream>
 #include <unistd.h>
 
 #include "FedComm.hpp"
 
 
+// Constructor
 FedCommunication :: FedCommunication()
 {
     cout << "========== HUAWEI - FedCommunication Constructor" << endl;
@@ -15,6 +16,7 @@ FedCommunication :: FedCommunication()
     pthread_create(&threadId_poll_gosipper, NULL, PollGossiper, NULL); 
 }
 
+// Destructor
 FedCommunication :: ~FedCommunication()
 {
     cout << "========== HUAWEI - FedCommunication Destructor" << endl;
@@ -22,11 +24,15 @@ FedCommunication :: ~FedCommunication()
 
 void* PollGossiper(void* arg)
 {
-    pthread_mutex_t mutex_fed_offers_filter_table = PTHREAD_MUTEX_INITIALIZER;
     while (1)
     {
+        pthread_mutex_lock(&mutex_fed_offers_filter_table);
+
         cout << "test Poll Gossiper" <<endl;
         ++fed_shared_var;
+        
+        pthread_mutex_unlock(&mutex_fed_offers_filter_table);
+        
         sleep (1);
 
         // Poll the gossiper
