@@ -1,52 +1,110 @@
-#include <iostream>
 #include <unistd.h>
 
 #include "FedAllocator.hpp"
 
 
-/*
-int fed_get(void)
+void FederationAllocatorProcess::
+ApplyFilters()
 {
-   return fed_shared_var;
-}
-*/
+    // Read the gossiper table and call the suppressOffers OR reviveOffers accordingly.
+    pthread_mutex_lock(&mutex_fed_offer_suppress_table);
 
-void testit()
-{
-    while (1)
+    for (map<string, Suppress_T>::iterator it = fed_offer_suppress_table.begin(); it!=fed_offer_suppress_table.end(); ++it)
     {
-        sleep (1);
-        
-        pthread_mutex_lock(&mutex_fed_offers_filter_table);
-        
-        cout<<"Test allocation module. fed_shared_var: "<<fed_shared_var <<endl;
+        bool suppress_fed = it->second.federation;
+        bool suppress_frm = it->second.framework;
+        mesos::FrameworkID framework_id = it->second.framework_id;
 
-        pthread_mutex_lock(&mutex_fed_offers_filter_table);
-    }   
+        bool suppress = (suppress_fed || suppress_frm);
+
+        // Call Suppress/Revive ONLY IF its NOT already Suppressed/Revived
+        if (suppress ^ frameworks[framework_id].suppressed)
+        {
+            if (suppress)
+            {
+                HierarchicalDRFAllocatorProcess::suppressOffers(framework_id);
+            }
+            else
+            {
+                HierarchicalDRFAllocatorProcess::reviveOffers(framework_id);
+            }
+        }
+    }
+
+    pthread_mutex_unlock(&mutex_fed_offer_suppress_table);
 }
 
-FederationAllocatorProcess::FederationAllocatorProcess()
-{
-    ;
-}
-
-void FederationAllocatorProcess::addFramework(const FrameworkID& frameworkId, 
-                                        const FrameworkInfo& frameworkInfo, 
-                                        const hashmap<SlaveID, Resources>& used)
+void FederationAllocatorProcess::
+addFramework(const FrameworkID& frameworkId,
+            const FrameworkInfo& frameworkInfo, 
+            const hashmap<SlaveID, Resources>& used)
 {
     cout << "========== HUAWEI - addFramework method is called" << endl;
+
+    pthread_mutex_lock(&mutex_fed_offer_suppress_table);
+
+    fed_offer_suppress_table[frameworkId.value()].framework_id = frameworkId;
+    fed_offer_suppress_table[frameworkId.value()].framework = false;
+
+    pthread_mutex_unlock(&mutex_fed_offer_suppress_table);
+
+    // Call the parent class method
     HierarchicalDRFAllocatorProcess::addFramework(frameworkId, frameworkInfo, used);
-    cout << "========== HUAWEI - " << "fed_shared_var: " << fed_shared_var <<"   "  << &fed_shared_var  << endl;
-    testit();
-    //cout << "========== HUAWEI - " << "fed_get() : " << fed_get() << endl;
+}
+
+void FederationAllocatorProcess::
+removeFramework(const FrameworkID& frameworkId)
+{
+    cout << "========== HUAWEI - removeFramework method is called" << endl;
+
+    pthread_mutex_lock(&mutex_fed_offer_suppress_table);
+
+    fed_offer_suppress_table.erase(frameworkId.value());
+
+    pthread_mutex_unlock(&mutex_fed_offer_suppress_table);
+
+    // Call the parent class method
+    HierarchicalDRFAllocatorProcess::removeFramework(frameworkId);
+}
+
+void FederationAllocatorProcess::
+suppressOffers(const FrameworkID& frameworkId)
+{
+    CHECK(initialized);
+    cout << "========== HUAWEI - " << "suppressOffers method called " << frameworkId << endl;
+    
+    pthread_mutex_lock(&mutex_fed_offer_suppress_table);
+
+    fed_offer_suppress_table[frameworkId.value()].framework = true;
+
+    // Call the parent class method
+    HierarchicalDRFAllocatorProcess::suppressOffers(frameworkId);
+
+    pthread_mutex_unlock(&mutex_fed_offer_suppress_table);
+}
+
+void FederationAllocatorProcess::
+reviveOffers(const FrameworkID& frameworkId)
+{
+    cout << "========== HUAWEI - " << "reviveOffers method called " << frameworkId << endl;
+
+    pthread_mutex_lock(&mutex_fed_offer_suppress_table);
+
+    fed_offer_suppress_table[frameworkId.value()].framework = false;
+
+    // Call the parent class method ONLY if federation doesn't say 'suppress'
+    if(fed_offer_suppress_table[frameworkId.value()].federation == false)
+    {
+        HierarchicalDRFAllocatorProcess::reviveOffers(frameworkId);
+    }
+
+    pthread_mutex_unlock(&mutex_fed_offer_suppress_table);
 }
 
 static Allocator* createFederationAllocator(const Parameters& parameters)
 {
     cout << "========== HUAWEI - createAllocator()" << endl;
-    cout << "========== HUAWEI - " << "fed_shared_var: " << fed_shared_var <<"   "  << &fed_shared_var  << endl;
-    //cout << "========== HUAWEI - " << "fed_get() : " << fed_get() << endl;
-    
+
     Try<Allocator*> allocator = FederationAllocator::create();
 
     if (allocator.isError()) 

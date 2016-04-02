@@ -1,22 +1,30 @@
-#ifndef __MESOS_ANONYMOUS_COMMUNICATION_HPP__
-#define __MESOS_ANONYMOUS_COMMUNICATION_HPP__ 
+#ifndef __MESOS_FEDERATION_ANONYMOUS_COMMUNICATION__
+#define __MESOS_FEDERATION_ANONYMOUS_COMMUNICATION__ 
 
 #include <mesos/module/anonymous.hpp>
-#include <stout/try.hpp>
 
-#include <pthread.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include "../../Fed_Common.hpp"
 
 
-using namespace std;
-using namespace mesos;
+typedef enum
+{
+    MSG_TYPE_ACK,
+    MSG_TYPE_FW_SUPP_INFO,
+
+} MsgType_E;
+
 
 using mesos::modules::Anonymous;
 
 
-pthread_mutex_t mutex_fed_offers_filter_table = PTHREAD_MUTEX_INITIALIZER;
-int fed_shared_var;
-//extern "C" int fed_get(void);
-std::map <string, bool> fed_offers_filter_table;
+pthread_mutex_t mutex_fed_offer_suppress_table = PTHREAD_MUTEX_INITIALIZER;
+
+std::map <string, Suppress_T> fed_offer_suppress_table;
 
 void* PollGossiper(void*);
 
@@ -28,4 +36,5 @@ class FedCommunication : public Anonymous
         virtual ~FedCommunication();
 };
 
-#endif // __MESOS_ANONYMOUS_COMMUNICATION_HPP__
+#endif // __MESOS_FEDERATION_ANONYMOUS_COMMUNICATION___
+
