@@ -115,7 +115,7 @@ class MyHierarchicalAllocatorTestBase : public ::testing::Test
 protected:
   MyHierarchicalAllocatorTestBase()
     //: allocator(createAllocator<HierarchicalDRFAllocator>()),
-    : allocator(createAllocator<FilterOffersFedAlloc>()),
+    : allocator(createAllocator<FederationAllocator>()),
       nextSlaveId(1),
       nextFrameworkId(1) {}
 
