@@ -8,6 +8,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <map>
+#include <stdlib.h>
 
 
 using namespace std;
