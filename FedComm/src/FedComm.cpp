@@ -40,7 +40,8 @@ void* PollGossiper(void* arg)
     struct sockaddr_in serv_addr;
 
     const char* HeartBeat = "H";
-    char MsgType;
+    unsigned char MsgType;
+	char buf[4];
     unsigned long MsgLen;
     unsigned long MsgCnt;
 
@@ -76,12 +77,14 @@ void* PollGossiper(void* arg)
         n = write(sockfd, HeartBeat, strlen(HeartBeat));
         if (n < 0) 
             cout << "========== HUAWEI - " << "ERROR writing to socket" <<endl;
+			return 0;
         
         //cout << "========== HUAWEI - " << "HeartBeat sent" <<endl;
 
         n = read(sockfd, &c, 1);
         putchar(c);
-/*
+		continue;
+
         // Read message type
         n = read(sockfd, &MsgType, 1);
 
@@ -91,19 +94,26 @@ void* PollGossiper(void* arg)
             cout << "========== HUAWEI - Gossiper ACK" << endl;
         }
         // we've got an update from Gossiper
-        else if (MsgType == MSG_TYPE_FW_SUPP_INFO)
+        //else if (MsgType == MSG_TYPE_FW_SUPP_INFO)
         {
             cout << "=========== ========== ========= HUAWEI - Gossiper Info" << endl;
             // Read the length of payload
-            n = read(sockfd, &MsgLen, 4);
+            n = read(sockfd, buf, 4);
+			MsgLen = atoi(buf);
+			MsgLen = ntohl(MsgLen);
             cout << "========== HUAWEI - Gossiper MsgLen : " << MsgLen << endl;
 
             // Read the count of frameworks
-            n = read(sockfd, &MsgCnt, 4);
+            n = read(sockfd, buf, 4);
+			MsgCnt = atoi(buf);
+			MsgCnt = ntohl(MsgCnt);
             cout << "========== HUAWEI - Gossiper MsgCnt: " << MsgCnt << endl;
 
             char* gossiper_info = new char[MsgLen];
             n = read(sockfd, gossiper_info, MsgLen);
+
+			pthread_mutex_lock(&mutex_fed_offer_suppress_table);
+
             ParseGossiperMessage(gossiper_info);
 
             cout << "========== HUAWEI - Gossiper table: " << endl;
@@ -117,9 +127,11 @@ void* PollGossiper(void* arg)
             }
             delete [] gossiper_info;
 
+			pthread_mutex_unlock(&mutex_fed_offer_suppress_table);
+
             // Set cond var
-            ;
-        }*/
+				;
+        }
     }
 }
 

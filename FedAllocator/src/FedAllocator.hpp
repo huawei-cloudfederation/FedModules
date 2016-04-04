@@ -18,7 +18,7 @@ extern pthread_mutex_t                  mutex_fed_offer_suppress_table;
 class FederationAllocatorProcess : public HierarchicalDRFAllocatorProcess 
 {
     public:
-        FederationAllocatorProcess() {}
+        FederationAllocatorProcess();
         virtual ~FederationAllocatorProcess() {}
 
         void addFramework(const FrameworkID& frameworkId,
@@ -30,7 +30,7 @@ class FederationAllocatorProcess : public HierarchicalDRFAllocatorProcess
         void suppressOffers(const FrameworkID& frameworkId);
         void reviveOffers(const FrameworkID& frameworkId);
 
-        void ApplyFilters();
+		void ApplyFilters();
 };
 
 

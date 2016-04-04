@@ -3,35 +3,63 @@
 #include "FedAllocator.hpp"
 
 
+// Forward declararions
+void* WaitForFilterUpdate(void* arg);
+
+
+FederationAllocatorProcess::FederationAllocatorProcess()
+{
+	cout << "========== HUAWEI - FederationAllocatorProcess Constructor" << endl;
+
+	pthread_t threadId_WaitForFilterUpdate;
+	pthread_create(&threadId_WaitForFilterUpdate, NULL, WaitForFilterUpdate, this);
+}
+
+void* WaitForFilterUpdate(void* arg)
+{
+	cout << "========== HUAWEI - WaitForFilterUpdate Thread " <<endl;
+
+	FederationAllocatorProcess *obj = (FederationAllocatorProcess*)arg;
+	obj->ApplyFilters();
+}
+
 void FederationAllocatorProcess::
 ApplyFilters()
 {
-    // Read the gossiper table and call the suppressOffers OR reviveOffers accordingly.
-    pthread_mutex_lock(&mutex_fed_offer_suppress_table);
+	cout << "========== HUAWEI - ApplyFilters method called" << endl;
 
-    for (map<string, Suppress_T>::iterator it = fed_offer_suppress_table.begin(); it!=fed_offer_suppress_table.end(); ++it)
-    {
-        bool suppress_fed = it->second.federation;
-        bool suppress_frm = it->second.framework;
-        mesos::FrameworkID framework_id = it->second.framework_id;
+	// Read the gossiper table and call the suppressOffers OR reviveOffers accordingly.
+	while (1)
+	{
+		// wait for cond var to be signalled
 
-        bool suppress = (suppress_fed || suppress_frm);
 
-        // Call Suppress/Revive ONLY IF its NOT already Suppressed/Revived
-        if (suppress ^ frameworks[framework_id].suppressed)
-        {
-            if (suppress)
-            {
-                HierarchicalDRFAllocatorProcess::suppressOffers(framework_id);
-            }
-            else
-            {
-                HierarchicalDRFAllocatorProcess::reviveOffers(framework_id);
-            }
-        }
-    }
+		pthread_mutex_lock(&mutex_fed_offer_suppress_table);
 
-    pthread_mutex_unlock(&mutex_fed_offer_suppress_table);
+		for (map<string, Suppress_T>::iterator it = fed_offer_suppress_table.begin(); it!=fed_offer_suppress_table.end(); ++it)
+		{
+			bool suppress_fed = it->second.federation;
+			bool suppress_frm = it->second.framework;
+			mesos::FrameworkID framework_id = it->second.framework_id;
+
+			bool suppress = (suppress_fed || suppress_frm);
+
+			// Call Suppress/Revive ONLY IF its NOT already Suppressed/Revived
+			if (suppress ^ frameworks[framework_id].suppressed)
+			{
+				if (suppress)
+				{
+					HierarchicalDRFAllocatorProcess::suppressOffers(framework_id);
+				}
+				else
+				{
+					HierarchicalDRFAllocatorProcess::reviveOffers(framework_id);
+				}
+			}
+		}
+		
+		pthread_mutex_unlock(&mutex_fed_offer_suppress_table);
+	}
 }
 
 void FederationAllocatorProcess::
