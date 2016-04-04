@@ -1,7 +1,19 @@
 #!/bin/bash
 
-export MESOS_HOME_DIR="$HOME/src/mesos"
+# This sscript expects mesos installation directory as mesos home directory
+# For no argument and invalid path the script will end
 
+MESOS_HOME_DIR="$1"
+if [ "$MESOS_HOME_DIR" == "" ]; then
+  echo "Please provide the Mesos Directory Path as argument"
+  exit 1
+elif [ ! -d "$MESOS_HOME_DIR" ]; then
+  echo "The mesos Home Location '$MESOS_HOME_DIR' is Not VALID"
+  exit 1
+fi
+
+echo "The mesos Home Location is '$MESOS_HOME_DIR'"
+	
 COMPILER="g++"
 THIRD_PARTY="$MESOS_HOME_DIR/build/3rdparty/libprocess/3rdparty"
 
