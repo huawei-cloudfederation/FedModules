@@ -4,7 +4,7 @@
 int ReadConfig(Config &cfg)
 {
     string port;
-    ifstream file("conf.cfg", ifstream::binary);
+    ifstream file("fedconf.cfg", ifstream::binary);
     if (!file)
     {
         cout << "ERROR";
