@@ -16,7 +16,7 @@ extern pthread_cond_t                   cond_var_filter;
 extern pthread_mutex_t                  mutex_fed_offer_suppress_table;
 
 
-class FederationAllocatorProcess : public HierarchicalDRFAllocatorProcess 
+class FederationAllocatorProcess : public HierarchicalDRFAllocatorProcess
 {
     public:
         FederationAllocatorProcess();
@@ -31,10 +31,11 @@ class FederationAllocatorProcess : public HierarchicalDRFAllocatorProcess
         void suppressOffers(const FrameworkID& frameworkId);
         void reviveOffers(const FrameworkID& frameworkId);
 
-		void ApplyFilters();
+        void ApplyFilters();
 };
 
 
 typedef MesosAllocator<FederationAllocatorProcess> FederationAllocator;
 
-#endif // __MESOS_FEDERATION_ALLOCATOR__ 
+#endif // __MESOS_FEDERATION_ALLOCATOR__
+
