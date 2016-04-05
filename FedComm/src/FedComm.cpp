@@ -1,4 +1,5 @@
 #include "FedComm.hpp"
+#include "../../FedUtil.hpp"
 
 // Constructor
 FedCommunication :: FedCommunication()
@@ -36,7 +37,7 @@ Thread function
 */
 void* PollGossiper(void* arg)
 {
-    int sockfd, portno, n;
+    int sockfd, n;
     struct sockaddr_in serv_addr;
 
     const char* HeartBeat = "H";
@@ -45,11 +46,9 @@ void* PollGossiper(void* arg)
     unsigned long MsgLen;
     unsigned long MsgCnt;
 
-    const char* server_ip = "54.191.55.153";//getenv("GOSSIPER_IP");
-    //char* server_ip = getenv("GOSSIPER_IP");
-    portno = 5555; //atoi(getenv("GOSSIPER_PORT"));
-    //portno = atoi(getenv("GOSSIPER_PORT"));
-    
+    Config cfg;
+    ReadConfig(cfg);
+
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
         cout << "========== HUAWEI - " << "ERROR opening socket" <<endl;
@@ -59,14 +58,13 @@ void* PollGossiper(void* arg)
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     cout << "**************************\n";
-    //inet_aton((const char*)server_ip, (struct in_addr*)(&(serv_addr.sin_addr)));
-    inet_pton(AF_INET, (const char*)server_ip, (struct in_addr*)(&(serv_addr.sin_addr)));
-    serv_addr.sin_port = htons(portno);
+    inet_aton((const char*)cfg.gossiper_ip.c_str(), (struct in_addr*)(&(serv_addr.sin_addr)));
+    serv_addr.sin_port = htons(cfg.gossiper_port);
 
     if (connect(sockfd,(struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-        cout << "========== HUAWEI - " << "ERROR connecting" <<endl;
+        cout << "========== HUAWEI - ERROR connecting" <<endl;
     
-    cout << "========== HUAWEI - " << "connected" <<endl;
+    cout << "========== HUAWEI - connected to " << cfg.gossiper_ip.c_str() <<":" << cfg.gossiper_port << endl;
 
     while (1)
     {
