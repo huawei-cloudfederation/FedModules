@@ -127,6 +127,7 @@ void* PollGossiper(void* arg)
             }
             delete [] gossiper_info;
 
+            pthread_cond_signal(&cond_var_filter);
 			pthread_mutex_unlock(&mutex_fed_offer_suppress_table);
 
             // Set cond var

@@ -23,6 +23,7 @@ using mesos::modules::Anonymous;
 
 
 pthread_mutex_t mutex_fed_offer_suppress_table = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond_var_filter = PTHREAD_COND_INITIALIZER;
 
 std::map <string, Suppress_T> fed_offer_suppress_table;
 

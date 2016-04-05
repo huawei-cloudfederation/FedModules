@@ -32,9 +32,8 @@ ApplyFilters()
 	while (1)
 	{
 		// wait for cond var to be signalled
-
-
 		pthread_mutex_lock(&mutex_fed_offer_suppress_table);
+        pthread_cond_wait(&cond_var_filter, &mutex_fed_offer_suppress_table);
 
 		for (map<string, Suppress_T>::iterator it = fed_offer_suppress_table.begin(); it!=fed_offer_suppress_table.end(); ++it)
 		{

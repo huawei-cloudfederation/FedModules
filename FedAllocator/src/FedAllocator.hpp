@@ -12,6 +12,7 @@ using mesos::master::allocator::Allocator;
 
 
 extern std::map <string, Suppress_T>    fed_offer_suppress_table;
+extern pthread_cond_t                   cond_var_filter;
 extern pthread_mutex_t                  mutex_fed_offer_suppress_table;
 
 
