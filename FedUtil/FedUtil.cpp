@@ -21,4 +21,14 @@ int ReadConfig(Config &cfg)
     return 1;
 }
 
+int Fed_Read(int fd, char* buf, int cnt)
+{
+    int n;
+    n = read(fd, buf, cnt)
+
+    if(n < 0)
+        return 0;
+    else
+        return 1;
+}
 

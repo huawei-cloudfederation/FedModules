@@ -52,8 +52,8 @@ void* PollGossiper(void* arg)
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
         cout << "========== HUAWEI - " << "ERROR opening socket" <<endl;
-
-    cout << "========== HUAWEI - " << "opened socket" <<endl;
+    else
+        cout << "========== HUAWEI - " << "opened socket" <<endl;
 
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
@@ -63,7 +63,7 @@ void* PollGossiper(void* arg)
     while (connect(sockfd,(struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
     {
         cout << "========== HUAWEI - ERROR connecting to " << cfg.gossiper_ip.c_str() <<":" << cfg.gossiper_port <<endl;
-        sleep(1);
+        sleep(1); // sllep for 1 sec before trying to connect again
     }
 
     cout << "========== HUAWEI - connected to " << cfg.gossiper_ip.c_str() <<":" << cfg.gossiper_port << endl;
