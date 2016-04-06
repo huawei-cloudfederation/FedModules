@@ -1,5 +1,5 @@
 #include "FedComm.hpp"
-#include "../../FedUtil.hpp"
+#include "../../FedUtil/FedUtil.hpp"
 
 // Constructor
 FedCommunication :: FedCommunication()
