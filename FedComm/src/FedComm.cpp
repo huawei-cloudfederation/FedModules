@@ -1,6 +1,7 @@
 #include "FedComm.hpp"
 #include "../../FedUtil/FedUtil.hpp"
 
+
 // Constructor
 FedCommunication :: FedCommunication()
 {
@@ -29,29 +30,25 @@ void ParseGossiperMessage(char* gossiper_info)
         int sep = token.find(':');
         string fId(token, 0, sep);
         fed_offer_suppress_table[fId].federation = (token[sep+1] == '1');
+
+        cout << fId <<" : " << (token[sep+1] == '1') << endl;
     }
 }
 
-/*
-Thread function
-*/
-void* PollGossiper(void* arg)
+int ConnectToGossiper()
 {
-    int sockfd, n;
+    int sockfd;
     struct sockaddr_in serv_addr;
-
-    const char* HeartBeat = "H";
-    unsigned char MsgType;
-    char buf[4];
-    unsigned long MsgLen;
-    unsigned long MsgCnt;
 
     Config cfg;
     ReadConfig(cfg);
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
+    {
         cout << "========== HUAWEI - " << "ERROR opening socket" <<endl;
+        return 0;
+    }
     else
         cout << "========== HUAWEI - " << "opened socket" <<endl;
 
@@ -67,22 +64,40 @@ void* PollGossiper(void* arg)
     }
 
     cout << "========== HUAWEI - connected to " << cfg.gossiper_ip.c_str() <<":" << cfg.gossiper_port << endl;
+ 
+    return sockfd;
+}
+
+/*
+Thread function
+*/
+void* PollGossiper(void* arg)
+{
+    int n;
+    const char* HeartBeat = "H";
+    unsigned char MsgType;
+    unsigned int buf;
+    unsigned long MsgLen;
+    unsigned long MsgCnt;
+
+    int sockfd = ConnectToGossiper();
+    if (!sockfd)
+        return 0;
 
     while (1)
     {
-        char c;
-        //sleep (1);
-
         // HeartBeat
         n = write(sockfd, HeartBeat, strlen(HeartBeat));
         if (n < 0)
             cout << "========== HUAWEI - " << "ERROR writing to socket" <<endl;
         else
-            ;//cout << "========== HUAWEI - " << "HeartBeat sent" <<endl;
+            cout << "========== HUAWEI - " << "HeartBeat sent" <<endl;
 
+        /*unsigned char c;
         n = read(sockfd, &c, 1);
         putchar(c);
-        continue;
+        fflush(stdout);
+        continue;*/
 
         // Read message type
         n = read(sockfd, &MsgType, 1);
@@ -94,38 +109,30 @@ void* PollGossiper(void* arg)
         }
         // we've got an update from Gossiper
         //else if (MsgType == MSG_TYPE_FW_SUPP_INFO)
+        else
         {
             cout << "=========== ========== ========= HUAWEI - Gossiper Info" << endl;
             // Read the length of payload
-            n = read(sockfd, buf, 4);
-            MsgLen = atoi(buf);
-            MsgLen = ntohl(MsgLen);
+            n = read(sockfd, &buf, 4);
+            MsgLen = ntohl(buf);
             cout << "========== HUAWEI - Gossiper MsgLen : " << MsgLen << endl;
 
             // Read the count of frameworks
-            n = read(sockfd, buf, 4);
-            MsgCnt = atoi(buf);
-            MsgCnt = ntohl(MsgCnt);
+            n = read(sockfd, &buf, 4);
+            MsgCnt = ntohl(buf);
             cout << "========== HUAWEI - Gossiper MsgCnt: " << MsgCnt << endl;
 
             char* gossiper_info = new char[MsgLen];
-            n = read(sockfd, gossiper_info, MsgLen);
+            n = read(sockfd, gossiper_info, MsgLen-9);
 
             pthread_mutex_lock(&mutex_fed_offer_suppress_table);
 
-            ParseGossiperMessage(gossiper_info);
-
             cout << "========== HUAWEI - Gossiper table: " << endl;
-            for (map<string, Suppress_T>::iterator it = fed_offer_suppress_table.begin(); it!=fed_offer_suppress_table.end(); ++it)
-            {
-                string id = it->first;
-                bool suppress_fed = it->second.federation;
-                bool suppress_frm = it->second.framework;
+            ParseGossiperMessage(gossiper_info);
+            cout << endl;
 
-                cout << id <<"  " << suppress_fed <<"  " << suppress_frm << endl;
-            }
             delete [] gossiper_info;
-
+            
             pthread_cond_signal(&cond_var_filter);
             pthread_mutex_unlock(&mutex_fed_offer_suppress_table);
         }
@@ -147,5 +154,3 @@ mesos::modules::Module<Anonymous> mesos_fed_comm_module(
     "Mesos Federation Communication Module.",
     NULL,
     createFedCommunicator);
-
-

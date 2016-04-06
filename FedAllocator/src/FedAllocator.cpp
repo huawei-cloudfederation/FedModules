@@ -35,6 +35,7 @@ ApplyFilters()
         pthread_mutex_lock(&mutex_fed_offer_suppress_table);
         pthread_cond_wait(&cond_var_filter, &mutex_fed_offer_suppress_table);
 
+        cout << "========== HUAWEI - Update from Communicator" << endl;
         for (map<string, Suppress_T>::iterator it = fed_offer_suppress_table.begin(); it!=fed_offer_suppress_table.end(); ++it)
         {
             bool suppress_fed = it->second.federation;
@@ -43,6 +44,7 @@ ApplyFilters()
 
             bool suppress = (suppress_fed || suppress_frm);
 
+            cout << it->first <<" : " << suppress_fed << endl;
             // Call Suppress/Revive ONLY IF its NOT already Suppressed/Revived
             if (suppress ^ frameworks[framework_id].suppressed)
             {
@@ -56,6 +58,7 @@ ApplyFilters()
                 }
             }
         }
+        cout << endl;
 
         pthread_mutex_unlock(&mutex_fed_offer_suppress_table);
     }
