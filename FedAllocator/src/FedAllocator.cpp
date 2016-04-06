@@ -44,16 +44,18 @@ ApplyFilters()
 
             bool suppress = (suppress_fed || suppress_frm);
 
-            cout << it->first <<" : " << suppress_fed << endl;
+            //cout << it->first <<" : " << suppress_fed << endl;
             // Call Suppress/Revive ONLY IF its NOT already Suppressed/Revived
             if (suppress ^ frameworks[framework_id].suppressed)
             {
                 if (suppress)
                 {
+                    cout << "Suppresed framework Id: " << it->first << endl;
                     HierarchicalDRFAllocatorProcess::suppressOffers(framework_id);
                 }
                 else
                 {
+                    cout << "Revived framework Id: " << it->first << endl;
                     HierarchicalDRFAllocatorProcess::reviveOffers(framework_id);
                 }
             }

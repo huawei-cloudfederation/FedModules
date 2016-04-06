@@ -24,6 +24,9 @@ void ParseGossiperMessage(char* gossiper_info)
 {
     stringstream str(gossiper_info);
     string token;
+    stringstream json;
+
+    json << "{";
 
     while (str >> token)
     {
@@ -31,8 +34,11 @@ void ParseGossiperMessage(char* gossiper_info)
         string fId(token, 0, sep);
         fed_offer_suppress_table[fId].federation = (token[sep+1] == '1');
 
-        cout << fId <<" : " << (token[sep+1] == '1') << endl;
+        json << fId <<":" << (token[sep+1] == '1') <<" ";
     }
+
+    json << "}";
+    cout << json.str() << endl;;
 }
 
 int ConnectToGossiper()
@@ -75,7 +81,7 @@ void* PollGossiper(void* arg)
 {
     int n;
     const char* HeartBeat = "H";
-    unsigned char MsgType;
+    char MsgType;
     unsigned int buf;
     unsigned long MsgLen;
     unsigned long MsgCnt;
@@ -89,7 +95,13 @@ void* PollGossiper(void* arg)
         // HeartBeat
         n = write(sockfd, HeartBeat, strlen(HeartBeat));
         if (n < 0)
+        {
             cout << "========== HUAWEI - " << "ERROR writing to socket" <<endl;
+            sockfd = ConnectToGossiper();
+            if (!sockfd)
+                return 0;
+
+        }
         else
             cout << "========== HUAWEI - " << "HeartBeat sent" <<endl;
 
@@ -123,7 +135,7 @@ void* PollGossiper(void* arg)
             cout << "========== HUAWEI - Gossiper MsgCnt: " << MsgCnt << endl;
 
             char* gossiper_info = new char[MsgLen];
-            n = read(sockfd, gossiper_info, MsgLen-9);
+            n = read(sockfd, gossiper_info, MsgLen);
 
             pthread_mutex_lock(&mutex_fed_offer_suppress_table);
 

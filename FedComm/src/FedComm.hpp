@@ -27,7 +27,9 @@ pthread_cond_t cond_var_filter = PTHREAD_COND_INITIALIZER;
 
 std::map <string, Suppress_T> fed_offer_suppress_table;
 
+
 void* PollGossiper(void*);
+int ConnectToGossiper();
 
 
 class FedCommunication : public Anonymous

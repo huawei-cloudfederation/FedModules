@@ -6,6 +6,7 @@
 
 #include "FedUtil.hpp"
 
+extern int ConnectToGossiper();
 
 int ReadConfig(Config &cfg)
 {
@@ -27,14 +28,21 @@ int ReadConfig(Config &cfg)
     return 1;
 }
 
-int Fed_Read(int fd, char* buf, int cnt)
+int Fed_Read(int& fd, char* buf, int cnt)
 {
     int n;
     n = read(fd, buf, cnt);
 
     if(n < 0)
-        return 0;
+    {
+        cout << "========== HUAWEI - " << "ERROR reading from socket" <<endl;
+        fd = ConnectToGossiper();
+        if (!fd)
+            return 0;
+    }
     else
+    {
         return 1;
+    }
 }
 
