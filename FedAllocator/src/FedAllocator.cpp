@@ -35,27 +35,32 @@ ApplyFilters()
         pthread_mutex_lock(&mutex_fed_offer_suppress_table);
         pthread_cond_wait(&cond_var_filter, &mutex_fed_offer_suppress_table);
 
-        cout << "========== HUAWEI - Update from Communicator" << endl;
+        cout << "========== HUAWEI - Received update from Communicator" << endl;
         for (map<string, Suppress_T>::iterator it = fed_offer_suppress_table.begin(); it!=fed_offer_suppress_table.end(); ++it)
         {
+            string f_id = it->first;
             bool suppress_fed = it->second.federation;
             bool suppress_frm = it->second.framework;
             mesos::FrameworkID framework_id = it->second.framework_id;
 
+            cout << "========== HUAWEI - processing for Framework ID: " << f_id << endl;
+            cout <<"\tsuppress_fed : " << suppress_fed <<"\tsuppress_frm : " << suppress_frm << endl;
+            cout <<"\tframeworks[framework_id].suppressed : " << frameworks[framework_id].suppressed <<endl;
+
             bool suppress = (suppress_fed || suppress_frm);
 
-            //cout << it->first <<" : " << suppress_fed << endl;
+            //cout << f_id <<" : " << suppress_fed << endl;
             // Call Suppress/Revive ONLY IF its NOT already Suppressed/Revived
             if (suppress ^ frameworks[framework_id].suppressed)
             {
                 if (suppress)
                 {
-                    cout << "Suppresed framework Id: " << it->first << endl;
+                    cout << "========== HUAWEI - Suppresed framework Id: " << f_id << endl;
                     HierarchicalDRFAllocatorProcess::suppressOffers(framework_id);
                 }
                 else
                 {
-                    cout << "Revived framework Id: " << it->first << endl;
+                    cout << "========== HUAWEI - Revived framework Id: " << f_id << endl;
                     HierarchicalDRFAllocatorProcess::reviveOffers(framework_id);
                 }
             }

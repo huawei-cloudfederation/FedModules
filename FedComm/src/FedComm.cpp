@@ -32,7 +32,11 @@ void ParseGossiperMessage(char* gossiper_info)
     {
         int sep = token.find(':');
         string fId(token, 0, sep);
-        fed_offer_suppress_table[fId].federation = (token[sep+1] == '1');
+
+        if (fed_offer_suppress_table.find(fId) != fed_offer_suppress_table.end())
+        {
+            fed_offer_suppress_table[fId].federation = (token[sep+1] == '1');
+        }
 
         json << fId <<":" << (token[sep+1] == '1') <<" ";
     }
