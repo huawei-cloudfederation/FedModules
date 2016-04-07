@@ -6,6 +6,9 @@
 
 #include "FedUtil.hpp"
 
+#include <glog/logging.h>
+
+
 extern int ConnectToGossiper();
 
 int ReadConfig(Config &cfg)
@@ -14,7 +17,7 @@ int ReadConfig(Config &cfg)
   ifstream file("fedconf.cfg", ifstream::binary);
   if (!file)
   {
-    cout << "ERROR";
+    LOG(INFO) << "ERROR";
     return 0;
   }
   if(!file.eof())
@@ -35,7 +38,7 @@ int Fed_Read(int& fd, char* buf, int cnt)
 
   if(n < 0)
   {
-    cout << "========== HUAWEI - " << "ERROR reading from socket" <<endl;
+    LOG(ERROR) << "ERROR reading from socket";
     fd = ConnectToGossiper();
     if (!fd)
       return 0;

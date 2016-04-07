@@ -2,6 +2,8 @@
 
 #include "FedAllocator.hpp"
 
+#include <glog/logging.h>
+
 
 // Forward declararions
 void* WaitForFilterUpdate(void* arg);
@@ -9,7 +11,7 @@ void* WaitForFilterUpdate(void* arg);
 
 FederationAllocatorProcess::FederationAllocatorProcess()
 {
-  cout << "========== HUAWEI - FederationAllocatorProcess Constructor" << endl;
+  LOG(INFO) << "FederationAllocatorProcess Constructor";
 
   pthread_t threadId_WaitForFilterUpdate;
   pthread_create(&threadId_WaitForFilterUpdate, NULL, WaitForFilterUpdate, this);
@@ -17,7 +19,7 @@ FederationAllocatorProcess::FederationAllocatorProcess()
 
 void* WaitForFilterUpdate(void* arg)
 {
-  cout << "========== HUAWEI - WaitForFilterUpdate Thread " <<endl;
+  LOG(INFO) << "WaitForFilterUpdate Thread ";
 
   FederationAllocatorProcess *obj = (FederationAllocatorProcess*)arg;
   obj->ApplyFilters();
@@ -26,7 +28,7 @@ void* WaitForFilterUpdate(void* arg)
 void FederationAllocatorProcess::
 ApplyFilters()
 {
-  cout << "========== HUAWEI - ApplyFilters method called" << endl;
+  LOG(INFO) << "ApplyFilters method called";
 
   // Read the gossiper table and call the suppressOffers OR reviveOffers accordingly.
   while (1)
@@ -35,7 +37,7 @@ ApplyFilters()
     pthread_mutex_lock(&mutex_fed_offer_suppress_table);
     pthread_cond_wait(&cond_var_filter, &mutex_fed_offer_suppress_table);
 
-    cout << "========== HUAWEI - Received update from Communicator" << endl;
+    LOG(INFO) << "Received update from Communicator";
     for (map<string, Suppress_T>::iterator it = fed_offer_suppress_table.begin(); it!=fed_offer_suppress_table.end(); ++it)
     {
       string f_id = it->first;
@@ -43,29 +45,28 @@ ApplyFilters()
       bool suppress_frm = it->second.framework;
       mesos::FrameworkID framework_id = it->second.framework_id;
 
-      cout << "========== HUAWEI - processing for Framework ID: " << f_id << endl;
-      cout <<"\tsuppress_fed : " << suppress_fed <<"\tsuppress_frm : " << suppress_frm << endl;
-      cout <<"\tframeworks[framework_id].suppressed : " << frameworks[framework_id].suppressed <<endl;
+      LOG(INFO) << "processing for Framework ID: " << f_id;
+      LOG(INFO) <<"\tsuppress_fed : " << suppress_fed <<"\tsuppress_frm : " << suppress_frm;
+      LOG(INFO) <<"\tframeworks[framework_id].suppressed : " << frameworks[framework_id].suppressed;
 
       bool suppress = (suppress_fed || suppress_frm);
 
-      //cout << f_id <<" : " << suppress_fed << endl;
+      //LOG(INFO) << f_id <<" : " << suppress_fed;
       // Call Suppress/Revive ONLY IF its NOT already Suppressed/Revived
       if (suppress ^ frameworks[framework_id].suppressed)
       {
         if (suppress)
         {
-          cout << "========== HUAWEI - Suppresed framework Id: " << f_id << endl;
+          LOG(INFO) << "Suppresed framework Id: " << f_id;
           HierarchicalDRFAllocatorProcess::suppressOffers(framework_id);
         }
         else
         {
-          cout << "========== HUAWEI - Revived framework Id: " << f_id << endl;
+          LOG(INFO) << "Revived framework Id: " << f_id;
           HierarchicalDRFAllocatorProcess::reviveOffers(framework_id);
         }
       }
     }
-    cout << endl;
 
     pthread_mutex_unlock(&mutex_fed_offer_suppress_table);
   }
@@ -76,7 +77,7 @@ addFramework(const FrameworkID& frameworkId,
       const FrameworkInfo& frameworkInfo,
       const hashmap<SlaveID, Resources>& used)
 {
-  cout << "========== HUAWEI - addFramework method is called" << endl;
+  LOG(INFO) << "addFramework method is called";
 
   pthread_mutex_lock(&mutex_fed_offer_suppress_table);
 
@@ -92,7 +93,7 @@ addFramework(const FrameworkID& frameworkId,
 void FederationAllocatorProcess::
 removeFramework(const FrameworkID& frameworkId)
 {
-  cout << "========== HUAWEI - removeFramework method is called" << endl;
+  LOG(INFO) << "removeFramework method is called";
 
   pthread_mutex_lock(&mutex_fed_offer_suppress_table);
 
@@ -108,7 +109,7 @@ void FederationAllocatorProcess::
 suppressOffers(const FrameworkID& frameworkId)
 {
   CHECK(initialized);
-  cout << "========== HUAWEI - " << "suppressOffers method called " << frameworkId << endl;
+  LOG(INFO) << "" << "suppressOffers method called " << frameworkId;
 
   pthread_mutex_lock(&mutex_fed_offer_suppress_table);
 
@@ -123,7 +124,7 @@ suppressOffers(const FrameworkID& frameworkId)
 void FederationAllocatorProcess::
 reviveOffers(const FrameworkID& frameworkId)
 {
-  cout << "========== HUAWEI - " << "reviveOffers method called " << frameworkId << endl;
+  LOG(INFO) << "" << "reviveOffers method called " << frameworkId;
 
   pthread_mutex_lock(&mutex_fed_offer_suppress_table);
 
@@ -140,7 +141,7 @@ reviveOffers(const FrameworkID& frameworkId)
 
 static Allocator* createFederationAllocator(const Parameters& parameters)
 {
-  cout << "========== HUAWEI - createAllocator()" << endl;
+  LOG(INFO) << "createAllocator()";
 
   Try<Allocator*> allocator = FederationAllocator::create();
 

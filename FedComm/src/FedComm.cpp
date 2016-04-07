@@ -1,11 +1,13 @@
 #include "FedComm.hpp"
 #include "../../FedUtil/FedUtil.hpp"
 
+#include <glog/logging.h>
+
 
 // Constructor
 FedCommunication :: FedCommunication()
 {
-  cout << "========== HUAWEI - FedCommunication Constructor" << endl;
+  LOG(INFO) << "FedCommunication Constructor";
 
   pthread_t threadId_poll_gosipper;
   pthread_create(&threadId_poll_gosipper, NULL, PollGossiper, NULL);
@@ -14,7 +16,7 @@ FedCommunication :: FedCommunication()
 // Destructor
 FedCommunication :: ~FedCommunication()
 {
-  cout << "========== HUAWEI - FedCommunication Destructor" << endl;
+  LOG(INFO) << "FedCommunication Destructor";
 }
 
 /*
@@ -42,7 +44,7 @@ void ParseGossiperMessage(char* gossiper_info)
   }
 
   json << "}";
-  cout << json.str() << endl;;
+  LOG(INFO) << json.str();
 }
 
 int ConnectToGossiper()
@@ -56,11 +58,11 @@ int ConnectToGossiper()
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0)
   {
-    cout << "========== HUAWEI - " << "ERROR opening socket" <<endl;
+    LOG(ERROR) << "ERROR opening socket";
     return 0;
   }
   else
-    cout << "========== HUAWEI - " << "opened socket" <<endl;
+    LOG(INFO) << "Opened socket";
 
   bzero((char *) &serv_addr, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
@@ -69,11 +71,11 @@ int ConnectToGossiper()
 
   while (connect(sockfd,(struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
   {
-    cout << "========== HUAWEI - ERROR connecting to " << cfg.gossiper_ip.c_str() <<":" << cfg.gossiper_port <<endl;
+    LOG(ERROR) << "ERROR connecting to " << cfg.gossiper_ip.c_str() <<":" << cfg.gossiper_port;
     sleep(1); // sllep for 1 sec before trying to connect again
   }
 
-  cout << "========== HUAWEI - connected to " << cfg.gossiper_ip.c_str() <<":" << cfg.gossiper_port << endl;
+  LOG(INFO) << "Connected to " << cfg.gossiper_ip.c_str() <<":" << cfg.gossiper_port;
  
   return sockfd;
 }
@@ -100,14 +102,14 @@ void* PollGossiper(void* arg)
     n = write(sockfd, HeartBeat, strlen(HeartBeat));
     if (n < 0)
     {
-      cout << "========== HUAWEI - " << "ERROR writing to socket" <<endl;
+      LOG(ERROR) << "ERROR writing to socket";
       sockfd = ConnectToGossiper();
       if (!sockfd)
         return 0;
 
     }
     else
-      cout << "========== HUAWEI - " << "HeartBeat sent" <<endl;
+      LOG(INFO) << "HeartBeat sent";
 
     /*unsigned char c;
     n = read(sockfd, &c, 1);
@@ -121,31 +123,30 @@ void* PollGossiper(void* arg)
     // It's an ACK
     if (MsgType == MSG_TYPE_ACK)
     {
-      cout << "========== HUAWEI - Gossiper ACK" << endl;
+      LOG(INFO) << "Gossiper ACK";
     }
     // we've got an update from Gossiper
     //else if (MsgType == MSG_TYPE_FW_SUPP_INFO)
     else
     {
-      cout << "=========== ========== ========= HUAWEI - Gossiper Info" << endl;
+      LOG(INFO) << "Gossiper Info";
       // Read the length of payload
       n = read(sockfd, &buf, 4);
       MsgLen = ntohl(buf);
-      cout << "========== HUAWEI - Gossiper MsgLen : " << MsgLen << endl;
+      LOG(INFO) << "Gossiper MsgLen: " << MsgLen;
 
       // Read the count of frameworks
       n = read(sockfd, &buf, 4);
       MsgCnt = ntohl(buf);
-      cout << "========== HUAWEI - Gossiper MsgCnt: " << MsgCnt << endl;
+      LOG(INFO) << "Gossiper MsgCnt: " << MsgCnt;
 
       char* gossiper_info = new char[MsgLen];
       n = read(sockfd, gossiper_info, MsgLen);
 
       pthread_mutex_lock(&mutex_fed_offer_suppress_table);
 
-      cout << "========== HUAWEI - Gossiper table: " << endl;
+      LOG(INFO) << "Gossiper table: ";
       ParseGossiperMessage(gossiper_info);
-      cout << endl;
 
       delete [] gossiper_info;
       
