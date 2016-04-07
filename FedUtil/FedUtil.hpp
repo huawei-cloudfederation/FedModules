@@ -11,8 +11,8 @@ using namespace std;
 
 typedef struct Config
 {
-    string gossiper_ip;
-    unsigned short gossiper_port;
+  string gossiper_ip;
+  unsigned short gossiper_port;
 }Config;
 
 

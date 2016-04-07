@@ -13,8 +13,8 @@
 
 typedef enum
 {
-    MSG_TYPE_ACK,
-    MSG_TYPE_FW_SUPP_INFO,
+  MSG_TYPE_ACK,
+  MSG_TYPE_FW_SUPP_INFO,
 
 } MsgType_E;
 
@@ -34,9 +34,9 @@ int ConnectToGossiper();
 
 class FedCommunication : public Anonymous
 {
-    public:
-        FedCommunication();
-        virtual ~FedCommunication();
+  public:
+    FedCommunication();
+    virtual ~FedCommunication();
 };
 
 #endif // __MESOS_FEDERATION_ANONYMOUS_COMMUNICATION___

@@ -17,9 +17,9 @@ using namespace mesos;
 
 typedef struct
 {
-    mesos::FrameworkID framework_id;
-    bool framework;
-    bool federation;
+  mesos::FrameworkID framework_id;
+  bool framework;
+  bool federation;
 } Suppress_T;
 
 #endif //__MESOS_FEDERATION_COMMON__
