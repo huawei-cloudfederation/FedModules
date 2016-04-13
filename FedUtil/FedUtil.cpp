@@ -17,7 +17,7 @@ int ReadConfig(Config &cfg)
   ifstream file("fedconf.cfg", ifstream::binary);
   if (!file)
   {
-    LOG(INFO) << "ERROR";
+    LOG(INFO) << "ERROR : Opening the configuration file";
     return 0;
   }
   if(!file.eof())

@@ -7,11 +7,11 @@
 // Constructor
 FedCommunication :: FedCommunication()
 {
-  LOG(INFO) << "FedCommunication Constructor";
-
-  pthread_t threadId_poll_gosipper;
-  pthread_create(&threadId_poll_gosipper, NULL, PollGossiper, NULL);
+  pthread_t threadId;
+  pthread_create(&threadId, NULL, PollGossiper, NULL);
+  //pthread_create(&threadId, NULL, PollGossiper, NULL);
 }
+
 
 // Destructor
 FedCommunication :: ~FedCommunication()
@@ -19,9 +19,8 @@ FedCommunication :: ~FedCommunication()
   LOG(INFO) << "FedCommunication Destructor";
 }
 
-/*
-Parser for gossiper message
-*/
+
+// Parser for gossiper messag
 void ParseGossiperMessage(char* gossiper_info)
 {
   stringstream str(gossiper_info);
@@ -35,9 +34,9 @@ void ParseGossiperMessage(char* gossiper_info)
     int sep = token.find(':');
     string fId(token, 0, sep);
 
-    if (fed_offer_suppress_table.find(fId) != fed_offer_suppress_table.end())
+    if (fedOfferSuppressTable.find(fId) != fedOfferSuppressTable.end())
     {
-      fed_offer_suppress_table[fId].federation = (token[sep+1] == '1');
+      fedOfferSuppressTable[fId].supByFederationFlag = (token[sep+1] == '1');
     }
 
     json << fId <<":" << (token[sep+1] == '1') <<" ";
@@ -46,6 +45,7 @@ void ParseGossiperMessage(char* gossiper_info)
   json << "}";
   LOG(INFO) << json.str();
 }
+
 
 int ConnectToGossiper()
 {
@@ -80,9 +80,8 @@ int ConnectToGossiper()
   return sockfd;
 }
 
-/*
-Thread function
-*/
+
+// Thread function
 void* PollGossiper(void* arg)
 {
   int n;
@@ -103,6 +102,7 @@ void* PollGossiper(void* arg)
     if (n < 0)
     {
       LOG(ERROR) << "ERROR writing to socket";
+      close(sockfd);
       sockfd = ConnectToGossiper();
       if (!sockfd)
         return 0;
@@ -143,18 +143,19 @@ void* PollGossiper(void* arg)
       char* gossiper_info = new char[MsgLen];
       n = read(sockfd, gossiper_info, MsgLen);
 
-      pthread_mutex_lock(&mutex_fed_offer_suppress_table);
+      pthread_mutex_lock(&mutexCondVarForFed);
 
       LOG(INFO) << "Gossiper table: ";
       ParseGossiperMessage(gossiper_info);
 
       delete [] gossiper_info;
       
-      pthread_cond_signal(&cond_var_filter);
-      pthread_mutex_unlock(&mutex_fed_offer_suppress_table);
+      pthread_cond_signal(&condVarForFed);
+      pthread_mutex_unlock(&mutexCondVarForFed);
     }
   }
 }
+
 
 static Anonymous* createFedCommunicator(const Parameters& parameters)
 {
@@ -162,11 +163,12 @@ static Anonymous* createFedCommunicator(const Parameters& parameters)
   return obj;
 }
 
+
 // Declares an Anonymous module named 'mesos_fed_comm_module'.
 mesos::modules::Module<Anonymous> mesos_fed_comm_module(
   MESOS_MODULE_API_VERSION,
   MESOS_VERSION,
-  "Huawei Mesos Federation",
+  "Huawei Mesos Federation Project",
   "parushuram.k@huawei.com",
   "Mesos Federation Communication Module.",
   NULL,

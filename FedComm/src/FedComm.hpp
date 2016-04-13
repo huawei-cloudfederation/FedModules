@@ -22,10 +22,12 @@ typedef enum
 using mesos::modules::Anonymous;
 
 
-pthread_mutex_t mutex_fed_offer_suppress_table = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t cond_var_filter = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutexFedOfferSuppressTable = PTHREAD_MUTEX_INITIALIZER;
 
-std::map <string, Suppress_T> fed_offer_suppress_table;
+pthread_cond_t condVarForFed = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutexCondVarForFed = PTHREAD_MUTEX_INITIALIZER;
+
+std::map <string, Suppress_T> fedOfferSuppressTable;
 
 
 void* PollGossiper(void*);
