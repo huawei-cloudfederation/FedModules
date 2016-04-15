@@ -1,7 +1,5 @@
 #include <unistd.h>
-
 #include "FedAllocator.hpp"
-
 #include <glog/logging.h>
 
 
@@ -11,8 +9,19 @@ void* WaitForFilterUpdate(void* arg);
 
 FederationAllocatorProcess::FederationAllocatorProcess()
 {
-  pthread_t threadId;
-  pthread_create(&threadId, NULL, WaitForFilterUpdate, this);
+  threadId = 0;
+  InitilizeThread();
+}
+
+
+FederationAllocatorProcess::~FederationAllocatorProcess()
+{
+  LOG(INFO) << "FEDERATION: Allocator Process Will End Now (Destructor called)";
+
+  pthread_exit(NULL);
+  pthread_mutex_destroy(&mutexFedOfferSuppressTable);
+  pthread_mutex_destroy(&mutexCondVarForFed);
+  pthread_cond_destroy(&condVarForFed);
 }
 
 
@@ -34,19 +43,24 @@ void FederationAllocatorProcess::ApplyFilters()
     pthread_mutex_lock(&mutexCondVarForFed);
     pthread_cond_wait(&condVarForFed, &mutexCondVarForFed);
 
-    LOG(INFO) << "FEDERATION: Received update from Federation Communicator";
+    LOG(INFO) << "FEDERATION: Received update from Fed Communicator";
 
     if(fedOfferSuppressTable.size() == 0)
 	LOG(WARNING) << "FEDERATION: No Framework is registered";
     else
 	LOG(INFO) << "FEDERATION: Total Number of FRAMEWORKS registered = " << fedOfferSuppressTable.size();
 
-    for (map<string, Suppress_T>::iterator it = fedOfferSuppressTable.begin(); it!=fedOfferSuppressTable.end(); ++it)
+    //for (map<string, Suppress_T>::iterator it = fedOfferSuppressTable.begin(); it!=fedOfferSuppressTable.end(); ++it)
+    for(auto& fedTableData : fedOfferSuppressTable)
     {
-      string frmwkId = it->first;
-      bool suppressByFedFlag = it->second.supByFederationFlag;
-      bool suppressByFrmFlag = it->second.supByFrameworkFlag;
-      mesos::FrameworkID fwId = it->second.frameworkId;
+      string frmwkId = fedTableData.first;
+      bool suppressByFedFlag = fedTableData.second.supByFederationFlag;
+      bool suppressByFrmFlag = fedTableData.second.supByFrameworkFlag;
+      mesos::FrameworkID fwId = fedTableData.second.frameworkId;
+      //string frmwkId = it->first;
+      //bool suppressByFedFlag = it->second.supByFederationFlag;
+      //bool suppressByFrmFlag = it->second.supByFrameworkFlag;
+      //mesos::FrameworkID fwId = it->second.frameworkId;
 
       LOG(INFO) << "FEDERATION: Apply Filter to Framework ID: " << frmwkId << "\n"
         << "\t\t\tTD: Suppressed by Federation : " << suppressByFedFlag << "\tTD: Suppressed by Framework : " << suppressByFrmFlag << "\n"
@@ -143,6 +157,18 @@ void FederationAllocatorProcess::reviveOffers(const FrameworkID& frameworkId)
 }
 
 
+void FederationAllocatorProcess::InitilizeThread()
+{
+  int tStatus =  pthread_create(&threadId, NULL, WaitForFilterUpdate, this);
+
+  if(tStatus > 0)
+  {
+    LOG(ERROR) << "Error: Thread creation is unsuccessfull";
+  }
+
+}
+
+
 static Allocator* createFederationAllocator(const Parameters& parameters)
 {
   LOG(INFO) << "FEDERATION: createAllocator()";
@@ -154,7 +180,9 @@ static Allocator* createFederationAllocator(const Parameters& parameters)
      return NULL;
   }
 
-  return allocator.get();
+  auto alocObj = allocator.get();
+
+  return alocObj;
 }
 
 

@@ -6,7 +6,6 @@
 
 #include "../../Fed_Common.hpp"
 
-
 using namespace mesos::internal::master::allocator;
 using mesos::master::allocator::Allocator;
 
@@ -23,7 +22,7 @@ class FederationAllocatorProcess : public HierarchicalDRFAllocatorProcess
 {
 public:
   FederationAllocatorProcess();
-  virtual ~FederationAllocatorProcess() {}
+  virtual ~FederationAllocatorProcess(); 
 
   void addFramework(const FrameworkID& frameworkId,
     const FrameworkInfo& frameworkInfo,
@@ -35,6 +34,11 @@ public:
   void reviveOffers(const FrameworkID& frameworkId);
 
   void ApplyFilters();
+  void InitilizeThread();
+
+private:
+  pthread_t threadId;
+
 };
 
 

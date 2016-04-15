@@ -9,7 +9,7 @@
 #include <glog/logging.h>
 
 
-extern int ConnectToGossiper();
+//extern int ConnectToGossiper();
 
 int ReadConfig(Config &cfg)
 {
@@ -39,7 +39,7 @@ int Fed_Read(int& fd, char* buf, int cnt)
   if(n < 0)
   {
     LOG(ERROR) << "ERROR reading from socket";
-    fd = ConnectToGossiper();
+    //fd = ConnectToGossiper();
     if (!fd)
       return 0;
   }
