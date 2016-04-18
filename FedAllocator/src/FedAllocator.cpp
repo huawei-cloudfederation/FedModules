@@ -34,7 +34,7 @@ void* WaitForFilterUpdate(void* arg)
 
 void FederationAllocatorProcess::ApplyFilters()
 {
-  LOG(INFO) << "FEDERATION: ApplyFilters method called";
+  LOG(INFO) << "FEDERATION: Fed Alloc Thread is Created";
 
   // Read the gossiper table and call the suppressOffers OR reviveOffers accordingly.
   while (1)
@@ -43,24 +43,19 @@ void FederationAllocatorProcess::ApplyFilters()
     pthread_mutex_lock(&mutexCondVarForFed);
     pthread_cond_wait(&condVarForFed, &mutexCondVarForFed);
 
-    LOG(INFO) << "FEDERATION: Received update from Fed Communicator";
+    LOG(INFO) << "FEDERATION: Received update signal from Fed Communicator";
 
     if(fedOfferSuppressTable.size() == 0)
 	LOG(WARNING) << "FEDERATION: No Framework is registered";
     else
-	LOG(INFO) << "FEDERATION: Total Number of FRAMEWORKS registered = " << fedOfferSuppressTable.size();
+	LOG(INFO) << "FEDERATION: Total Number of FRAMEWORKs registered = " << fedOfferSuppressTable.size();
 
-    //for (map<string, Suppress_T>::iterator it = fedOfferSuppressTable.begin(); it!=fedOfferSuppressTable.end(); ++it)
     for(auto& fedTableData : fedOfferSuppressTable)
     {
       string frmwkId = fedTableData.first;
       bool suppressByFedFlag = fedTableData.second.supByFederationFlag;
       bool suppressByFrmFlag = fedTableData.second.supByFrameworkFlag;
       mesos::FrameworkID fwId = fedTableData.second.frameworkId;
-      //string frmwkId = it->first;
-      //bool suppressByFedFlag = it->second.supByFederationFlag;
-      //bool suppressByFrmFlag = it->second.supByFrameworkFlag;
-      //mesos::FrameworkID fwId = it->second.frameworkId;
 
       LOG(INFO) << "FEDERATION: Apply Filter to Framework ID: " << frmwkId << "\n"
         << "\t\t\tTD: Suppressed by Federation : " << suppressByFedFlag << "\tTD: Suppressed by Framework : " << suppressByFrmFlag << "\n"
@@ -89,13 +84,12 @@ void FederationAllocatorProcess::ApplyFilters()
 }
 
 
+// Extended Add Framework Method, which is invoked by Mesos Master
 void FederationAllocatorProcess::addFramework(
     const FrameworkID& frameworkId,
     const FrameworkInfo& frameworkInfo,
     const hashmap<SlaveID, Resources>& used)
 {
-  LOG(INFO) << "FEDERATION: addFramework method is called";
-
   pthread_mutex_lock(&mutexFedOfferSuppressTable);
 
   fedOfferSuppressTable[frameworkId.value()].frameworkId = frameworkId;
@@ -105,13 +99,14 @@ void FederationAllocatorProcess::addFramework(
 
   // Call the parent class method
   HierarchicalDRFAllocatorProcess::addFramework(frameworkId, frameworkInfo, used);
+
+  LOG(INFO) << "FEDERATION: New Framework [ " << frameworkId.value() << " ] Added to MESOS";
 }
 
 
+// Extended Remove Framework Method, which is invoked by Mesos Master
 void FederationAllocatorProcess::removeFramework(const FrameworkID& frameworkId)
 {
-  LOG(INFO) << "FEDERATION: removeFramework method is called";
-
   pthread_mutex_lock(&mutexFedOfferSuppressTable);
 
   fedOfferSuppressTable.erase(frameworkId.value());
@@ -120,13 +115,15 @@ void FederationAllocatorProcess::removeFramework(const FrameworkID& frameworkId)
 
   // Call the parent class method
   HierarchicalDRFAllocatorProcess::removeFramework(frameworkId);
+
+  LOG(INFO) << "FEDERATION: Framework [ " << frameworkId.value() << " ] Removed From MESOS";
 }
 
 
+// Extended Suppress Offer Method, which is invoked by Framework
 void FederationAllocatorProcess::suppressOffers(const FrameworkID& frameworkId)
 {
   CHECK(initialized);
-  LOG(INFO) << "FEDERATION: suppressOffers method called " << frameworkId;
 
   pthread_mutex_lock(&mutexFedOfferSuppressTable);
 
@@ -136,13 +133,14 @@ void FederationAllocatorProcess::suppressOffers(const FrameworkID& frameworkId)
   HierarchicalDRFAllocatorProcess::suppressOffers(frameworkId);
 
   pthread_mutex_unlock(&mutexFedOfferSuppressTable);
+
+  LOG(INFO) << "FEDERATION: Offer Suppressed/Rejected by Framework :  " << frameworkId;
 }
 
 
+// Extended Revive Offer Method, which is invoked by Framework
 void FederationAllocatorProcess::reviveOffers(const FrameworkID& frameworkId)
 {
-  LOG(INFO) << "FEDERATION: reviveOffers method called " << frameworkId;
-
   pthread_mutex_lock(&mutexFedOfferSuppressTable);
 
   fedOfferSuppressTable[frameworkId.value()].supByFrameworkFlag = false;
@@ -154,6 +152,8 @@ void FederationAllocatorProcess::reviveOffers(const FrameworkID& frameworkId)
   }
 
   pthread_mutex_unlock(&mutexFedOfferSuppressTable);
+
+  LOG(INFO) << "FEDERATION: Offer Revived/Accepted by Framework :  " << frameworkId;
 }
 
 
@@ -171,8 +171,6 @@ void FederationAllocatorProcess::InitilizeThread()
 
 static Allocator* createFederationAllocator(const Parameters& parameters)
 {
-  LOG(INFO) << "FEDERATION: createAllocator()";
-
   Try<Allocator*> allocator = FederationAllocator::create();
 
   if (allocator.isError())
@@ -182,6 +180,7 @@ static Allocator* createFederationAllocator(const Parameters& parameters)
 
   auto alocObj = allocator.get();
 
+  LOG(INFO) << "FEDERATION: Fed Allocator Module created, and will be loaded to mesos";
   return alocObj;
 }
 

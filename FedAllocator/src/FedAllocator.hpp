@@ -1,6 +1,8 @@
 #ifndef __MESOS_FEDERATION_ALLOCATOR__
 #define __MESOS_FEDERATION_ALLOCATOR__
 
+//#include "../../Fed_Common.hpp"
+
 #include <mesos/module/allocator.hpp>
 #include "master/allocator/mesos/hierarchical.hpp"
 
@@ -9,19 +11,23 @@
 using namespace mesos::internal::master::allocator;
 using mesos::master::allocator::Allocator;
 
+// Conditional Variable to get to know the table update
+extern pthread_cond_t           condVarForFed; 
+// Associated mutex variable for Conditional Variable
+extern pthread_mutex_t          mutexCondVarForFed; 
 
-extern pthread_mutex_t          mutexFedOfferSuppressTable;
-
-extern pthread_cond_t           condVarForFed;
-extern pthread_mutex_t          mutexCondVarForFed;
-
-extern std::map <string, Suppress_T>  fedOfferSuppressTable;
+// Table of Suppressed Offers for a Framework by Federation
+extern std::map <string, Suppress_T>  fedOfferSuppressTable; 
+// Mutex Variable to lock the Suppressed Offer Table
+extern pthread_mutex_t          mutexFedOfferSuppressTable; 
 
 
+// Inherited/Extended Hierarchical DRF Allocator class
 class FederationAllocatorProcess : public HierarchicalDRFAllocatorProcess
 {
 public:
   FederationAllocatorProcess();
+
   virtual ~FederationAllocatorProcess(); 
 
   void addFramework(const FrameworkID& frameworkId,
@@ -31,9 +37,11 @@ public:
   void removeFramework(const FrameworkID& frameworkId);
 
   void suppressOffers(const FrameworkID& frameworkId);
+
   void reviveOffers(const FrameworkID& frameworkId);
 
   void ApplyFilters();
+
   void InitilizeThread();
 
 private:

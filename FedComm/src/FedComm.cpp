@@ -2,10 +2,11 @@
 #include <glog/logging.h>
 
 
-// Constructor
 FedCommunication :: FedCommunication()
 {
-  fedCommSockfd = portno = 0;
+  fedCommSockfd = -1; 
+  portno = 0;
+  threadId = 0;
 }
 
 
@@ -27,13 +28,13 @@ void FedCommunication::OpenServerSocket()
 
   if (fedCommSockfd < 0)
   {
-    LOG(ERROR) << "Error: Opening the fedComm machine socket";
+    LOG(ERROR) << "FEDERATION-Error: Opening the fedComm machine socket";
   }
 
   // Initialize socket structure
   bzero((char *) &fedComm_addr, sizeof(fedComm_addr));
 
-  portno = 5555;
+  portno = 5555; // default port num from Gossiper to Fed Comm
 
   fedComm_addr.sin_family = AF_INET;
   fedComm_addr.sin_addr.s_addr = INADDR_ANY;
@@ -42,7 +43,7 @@ void FedCommunication::OpenServerSocket()
   // Now bind the host address
   if (bind(fedCommSockfd, (struct sockaddr *) &fedComm_addr, sizeof(fedComm_addr)) < 0)
   {
-    LOG(ERROR) << "FEDERATION: Error on Binding";
+    LOG(ERROR) << "FEDERATION-Error: on Binding";
     return;
   }
 
@@ -53,20 +54,22 @@ void FedCommunication::OpenServerSocket()
 
   if(tStatus > 0)
   {
-    LOG(ERROR) << "Error: Thread creation unsuccessfull";
+    LOG(ERROR) << "FEDERATION-Error: Thread creation unsuccessfull";
     return;
   }
 
-  LOG(INFO) << "FEDERATION: Thread ceated and running successfully";
+  LOG(INFO) << "FEDERATION: Thread created and running successfully";
 }
 
 
-// Parser for gossiper messag
+// Parser for gossiper message
+// If there is any change in the framework (Flag value in table), 
+// then only it make sense to send signal to Fed Alloc Module
 bool ParseGossiperMessage(char* gossiper_info)
 {
   stringstream str(gossiper_info);
-  string token;
   stringstream json;
+  string token;
   bool updated = false;
 
   json << "[";
@@ -88,15 +91,44 @@ bool ParseGossiperMessage(char* gossiper_info)
       fedOfferSuppressTable[fId].supByFederationFlag = fedFlag;
     }
 
-    if(updated) json << " { " << fId << " : " << fedFlag << " } ";
+    json << " { " << fId << " : " << fedFlag << " } ";
   }
 
   pthread_mutex_unlock(&mutexFedOfferSuppressTable);
 
   json << "]";
-  LOG(INFO) << "FEDERATION: Parsed Gossiper Info ==> " << json.str();
+  if(updated) LOG(INFO) << "FEDERATION: Parsed Gossiper Info ==> " << json.str();
 
   return updated;
+}
+
+
+void ParseGossiperMsgSendSignal(int gossiperSockfd, unsigned int MsgLen, bool &notFirstTime)
+{
+  char* gossiper_info = new char[MsgLen];
+  int numChar = read(gossiperSockfd, gossiper_info, MsgLen);
+
+  pthread_mutex_lock(&mutexCondVarForFed);
+
+  //LOG(INFO) << "FEDERATION: Gossiper table: Will Parse Now";
+  bool isUpdated = ParseGossiperMessage(gossiper_info);
+
+  delete [] gossiper_info;
+
+  if(fedOfferSuppressTable.size() > 0)
+  {
+     // Check if the table is modified or not
+     // depends on this send the signal to Fed Alloc module
+     if(isUpdated)
+     {
+        LOG(INFO) << "FEDERATION: Now table update signal will be sent to Fed Alloc";
+        pthread_cond_signal(&condVarForFed);
+     }
+     notFirstTime = true;
+  }
+
+  pthread_mutex_unlock(&mutexCondVarForFed);
+
 }
 
 
@@ -105,8 +137,6 @@ void GetFrameworkInfoFromGossiper(int gossiperSockfd)
   unsigned int MsgLen, MsgCnt, MsgType, buf;
   unsigned char ack = 2;
   bool notFirstTime = false;
-
-  LOG(INFO) << "FEDERATION: Client Gossiper sock fd is " << gossiperSockfd << " ";
 
   // Until gossiper is connected to the Fed Comm (mesos)
   while(gossiperSockfd > 0)
@@ -117,18 +147,16 @@ void GetFrameworkInfoFromGossiper(int gossiperSockfd)
     // Read message type
     int numChar = read(gossiperSockfd, &MsgType, 1);
 
-    // It's an ACK
     if (MsgType == MSG_TYPE_ACK && numChar == 0)
     {
-      //LOG(INFO) << "FEDERATION: Response From Gossiper: " << MsgType << "  Num Char Read = " << numChar;
-      break;
+      break; // When there is no response from Gossiper to Fed Comm
     }
     else if (MsgType == MSG_TYPE_HEARTBEAT)
     {
        numChar = write(gossiperSockfd,(void *) &ack,1);
        LOG(INFO) << "FEDERATION: Sent Heart Beat to Gossiper";
     }
-    else if (MsgType == MSG_TYPE_DATA)
+    else if (MsgType == MSG_TYPE_DATA) // If data is sent by the Gossiper
     {
        // Read the length of payload
        numChar = read(gossiperSockfd, &buf, 4);
@@ -137,53 +165,27 @@ void GetFrameworkInfoFromGossiper(int gossiperSockfd)
        // when framework is not running Gossiper is sending zero info
        if(MsgLen <= 0 || numChar <= 0)
        {
-	 LOG(WARNING) << "Looks like Framework is NOT running, so Gossiper sending BLANK info";
+	 LOG(WARNING) << "FEDERATION: Looks like Framework is NOT running, so Gossiper sending BLANK info";
 	 continue;
        }
 
        // For the first time table does not have anything
        if(fedOfferSuppressTable.size() <= 0 && notFirstTime == true)
        {
-	 LOG(WARNING) << "Looks like Framework is NOT running, so Gossiper sending OLD info";
+	 LOG(WARNING) << "FEDERATION: Looks like Framework is NOT running, so Gossiper sending OLD info";
 	 continue;
        }
-
-       //LOG(INFO) << "FEDERATION: Gossiper Info";
-       //LOG(INFO) << "FEDERATION: Gossiper Msg: " << buf  << " MsgLen: " << MsgLen;
 
        // Read the count of frameworks
        numChar = read(gossiperSockfd, &buf, 4);
        MsgCnt = ntohl(buf);
-       //LOG(INFO) << "FEDERATION: Gossiper Msg: " << buf  << " MsgCnt: " << MsgCnt;
 
-       char* gossiper_info = new char[MsgLen];
-       numChar = read(gossiperSockfd, gossiper_info, MsgLen);
+       ParseGossiperMsgSendSignal(gossiperSockfd, MsgLen, notFirstTime);
 
-       pthread_mutex_lock(&mutexCondVarForFed);
-
-       //LOG(INFO) << "FEDERATION: Gossiper table: Will Parse Now";
-       bool isUpdated = ParseGossiperMessage(gossiper_info);
-
-       delete [] gossiper_info;
-      
-       if(fedOfferSuppressTable.size() > 0)
-       {
-	  // Check if the table is modified or not
-	  // depends on this send the signal to Fed Alloc module
-	  if(isUpdated)
-	  {
-             LOG(INFO) << "FEDERATION: Now table update signal will be sent to Fed Alloc";	
-             pthread_cond_signal(&condVarForFed);
-          }
-	  notFirstTime = true;
-       }
-
-       pthread_mutex_unlock(&mutexCondVarForFed);
     }
   } // while LOP ends here
 
 }
-
 
 
 void* PollFedGossiper(void* servSockfd)
@@ -205,21 +207,20 @@ void* PollFedGossiper(void* servSockfd)
     }
 
     gossiperSockfd = accept(fedCommSockfd, (struct sockaddr *) &gossiper_addr, &cliLen);
-    //LOG(INFO) << "FEDERATION: Accepted the Gossiper Connection Now";
 
     char clntName[INET_ADDRSTRLEN];
     inet_ntop(AF_INET,&gossiper_addr.sin_addr.s_addr,clntName,sizeof(clntName));
-
     unsigned int port = ntohs(gossiper_addr.sin_port);
 
-    LOG(INFO) << "FEDERATION: Accepted Gossiper Machine Name : " << clntName << " and port # " << port;
-
     if(gossiperSockfd > 0)
-      GetFrameworkInfoFromGossiper(gossiperSockfd);
+    {
+       LOG(INFO) << "FEDERATION: Gossiper (Machine Name : " << clntName << " and port # " << port << ") established connection with Fed Comm Module" ;
+       GetFrameworkInfoFromGossiper(gossiperSockfd);
+       LOG(INFO) << "FEDERATION: Connection with Gossiper is LOST, will wait for new connection";
+    }
     else
-      LOG(ERROR) << "Error: Opening the gossiper machine socket";
+      LOG(ERROR) << "FEDERATION-Error: Connecting to the gossiper machine " << clntName << " and port # " << port;
 
-    LOG(INFO) << "FEDERATION: Connection with Gossiper is LOST, will wait for new connection";
   }
 
 }
