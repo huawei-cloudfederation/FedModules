@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# This sscript expects mesos installation directory as mesos home directory
+# This script expects mesos installation directory as mesos home directory
 # For no argument and invalid path the script will end
 
 MESOS_HOME_DIR="$1"
 if [ "$MESOS_HOME_DIR" == "" ]; then
-  echo "Please provide the Mesos Directory Path as argument"
+  echo -e "\nPlease provide the Mesos Directory Path as argument\n"
   exit 1
 elif [ ! -d "$MESOS_HOME_DIR" ]; then
-  echo "The mesos Home Location '$MESOS_HOME_DIR' is Not VALID"
+  echo -e "\nThe mesos Home Location '$MESOS_HOME_DIR' is Not VALID\n"
   exit 1
 fi
 
@@ -21,4 +21,8 @@ HEADER_FILES=" -I $MESOS_HOME_DIR/include -I $MESOS_HOME_DIR/src -I $MESOS_HOME_
 
 $COMPILER $HEADER_FILES -lmesos -std=c++11 -fPIC -shared ./FedAllocator/src/FedAllocator.cpp ./FedComm/src/FedComm.cpp -o libFedModules.so
 
-echo -e "Code Compiled and created shared library (libFedModules.so) for you \n"
+if [ $? -eq 0 ]; then
+  echo -e "Code Compiled and created shared library (libFedModules.so) for you \n"
+else
+  echo -e "Code Compilation End with ERROR\n"
+fi
