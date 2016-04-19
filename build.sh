@@ -4,6 +4,7 @@
 # For no argument and invalid path the script will end
 
 MESOS_HOME_DIR="$1"
+
 if [ "$MESOS_HOME_DIR" == "" ]; then
   echo -e "\nPlease provide the Mesos Directory Path as argument\n"
   exit 1
@@ -20,7 +21,7 @@ UB_LIBPROCESS_PATH="$MESOS_HOME_DIR/3rdparty/libprocess"
 
 MESOS_LIB_PATH="-L $MESOS_HOME_DIR/build/src/.libs"
 
-HEADER_FILES=" -I $MESOS_HOME_DIR/include -I $MESOS_HOME_DIR/src -I $MESOS_HOME_DIR/build/include -I $MESOS_HOME_DIR/build/src -I $UB_LIBPROCESS_PATH/include  -I $UB_LIBPROCESS_PATH/3rdparty/stout/include -I $UB_LIBPROCESS_PATH/3rdparty/stout/include -I $B_THIRD_PARTY/picojson-1.3.0 -I $B_THIRD_PARTY/boost-1.53.0 -I$B_THIRD_PARTY/glog-0.3.3/src -I $B_THIRD_PARTY/stout/include -I $B_THIRD_PARTY/protobuf-2.5.0/src"
+HEADER_FILES=" -I $MESOS_HOME_DIR/include -I $MESOS_HOME_DIR/src -I $MESOS_HOME_DIR/build/include -I $MESOS_HOME_DIR/build/src -I $UB_LIBPROCESS_PATH/include  -I $UB_LIBPROCESS_PATH/3rdparty/stout/include -I $UB_LIBPROCESS_PATH/3rdparty/stout/include -I $B_THIRD_PARTY/picojson-1.3.0 -I $B_THIRD_PARTY/boost-1.53.0 -I$B_THIRD_PARTY/glog-0.3.3/src -I $B_THIRD_PARTY/stout/include -I $B_THIRD_PARTY/protobuf-2.6.1/src"
 
 $COMPILER $HEADER_FILES $MESOS_LIB_PATH -lmesos -std=c++11 -fPIC -shared ./FedAllocator/src/FedAllocator.cpp ./FedComm/src/FedComm.cpp -o libFedModules.so
 
