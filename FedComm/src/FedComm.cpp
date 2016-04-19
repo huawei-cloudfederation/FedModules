@@ -17,9 +17,6 @@ FedCommunication :: ~FedCommunication()
   // cleanup activity
   pthread_exit(NULL);
   close(fedCommSockfd);
-  //pthread_mutex_destroy(&mutexFedOfferSuppressTable);
-  //pthread_mutex_destroy(&mutexCondVarForFed);
-  //pthread_cond_destroy(&condVarForFed);
 }
 
 
@@ -73,7 +70,6 @@ bool ParseGossiperMessage(char* gossiper_info)
 
   json << "[";
 
-  //pthread_mutex_lock(&mutexFedOfferSuppressTable);
   mutexFedOfferSuppressTable.lock(); // mutex lock for Table
 
   while (str >> token)
@@ -94,7 +90,6 @@ bool ParseGossiperMessage(char* gossiper_info)
     json << " { " << fId << " : " << fedFlag << " } ";
   }
 
-  //pthread_mutex_unlock(&mutexFedOfferSuppressTable);
   mutexFedOfferSuppressTable.unlock(); // mutex unlock for Table
 
   json << "]";
@@ -109,10 +104,8 @@ void ParseGossiperMsgSendSignal(int gossiperSockfd, unsigned int MsgLen, bool &n
   char* gossiper_info = new char[MsgLen];
   int numChar = read(gossiperSockfd, gossiper_info, MsgLen);
 
-  //pthread_mutex_lock(&mutexCondVarForFed);
   mutexCondVarForFed.lock(); // mutex lock for Table
 
-  //LOG(INFO) << "FEDERATION: Gossiper table: Will Parse Now";
   bool isUpdated = ParseGossiperMessage(gossiper_info);
 
   delete [] gossiper_info;
@@ -124,13 +117,11 @@ void ParseGossiperMsgSendSignal(int gossiperSockfd, unsigned int MsgLen, bool &n
      if(isUpdated)
      {
         LOG(INFO) << "FEDERATION: Now table update signal will be sent to Fed Alloc";
-        //pthread_cond_signal(&condVarForFed);
         condVarForFed.notify_one();
      }
      notFirstTime = true;
   }
 
-  //pthread_mutex_unlock(&mutexCondVarForFed);
   mutexCondVarForFed.unlock(); // mutex unlock for Table
 }
 
