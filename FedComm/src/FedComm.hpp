@@ -1,8 +1,6 @@
 #ifndef __MESOS_FEDERATION_ANONYMOUS_COMMUNICATION__
 #define __MESOS_FEDERATION_ANONYMOUS_COMMUNICATION__
 
-//#include "../../Fed_Common.hpp"
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -24,11 +22,13 @@ typedef enum
 } MsgType_E;
 
 
-pthread_cond_t condVarForFed = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t mutexCondVarForFed = PTHREAD_MUTEX_INITIALIZER;
+std::condition_variable condVarForFed;
+std::mutex CondVarForFed;
+std::unique_lock <std::mutex> mutexCondVarForFed(CondVarForFed);
 
-std::map <string, Suppress_T> fedOfferSuppressTable;
-pthread_mutex_t mutexFedOfferSuppressTable = PTHREAD_MUTEX_INITIALIZER;
+std::map <std::string, Suppress_T> fedOfferSuppressTable;
+std::mutex FedOfferSuppressTable;
+std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
 
 // Forward declaration for a thread function
 void* PollFedGossiper(void*);

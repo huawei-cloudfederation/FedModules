@@ -1,8 +1,6 @@
 #ifndef __MESOS_FEDERATION_ALLOCATOR__
 #define __MESOS_FEDERATION_ALLOCATOR__
 
-//#include "../../Fed_Common.hpp"
-
 #include <mesos/module/allocator.hpp>
 #include "master/allocator/mesos/hierarchical.hpp"
 
@@ -12,14 +10,16 @@ using namespace mesos::internal::master::allocator;
 using mesos::master::allocator::Allocator;
 
 // Conditional Variable to get to know the table update
-extern pthread_cond_t           condVarForFed; 
+extern std::condition_variable condVarForFed; 
 // Associated mutex variable for Conditional Variable
-extern pthread_mutex_t          mutexCondVarForFed; 
+extern std::mutex                      CondVarForFed; 
+extern std::unique_lock <std::mutex>   mutexCondVarForFed; 
 
 // Table of Suppressed Offers for a Framework by Federation
-extern std::map <string, Suppress_T>  fedOfferSuppressTable; 
+extern std::map <std::string, Suppress_T>  fedOfferSuppressTable; 
 // Mutex Variable to lock the Suppressed Offer Table
-extern pthread_mutex_t          mutexFedOfferSuppressTable; 
+extern std::mutex                     FedOfferSuppressTable; 
+extern std::unique_lock <std::mutex>  mutexFedOfferSuppressTable; 
 
 
 // Inherited/Extended Hierarchical DRF Allocator class

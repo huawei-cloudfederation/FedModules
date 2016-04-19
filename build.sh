@@ -12,17 +12,20 @@ elif [ ! -d "$MESOS_HOME_DIR" ]; then
   exit 1
 fi
 
-echo -e "\nThe mesos Home Location is '$MESOS_HOME_DIR'"
+echo -e "\nThe mesos Home Location is '$MESOS_HOME_DIR' \n"
 	
 COMPILER="g++"
-THIRD_PARTY="$MESOS_HOME_DIR/build/3rdparty/libprocess/3rdparty"
+B_THIRD_PARTY="$MESOS_HOME_DIR/build/3rdparty/libprocess/3rdparty"
+UB_LIBPROCESS_PATH="$MESOS_HOME_DIR/3rdparty/libprocess"
 
-HEADER_FILES=" -I $MESOS_HOME_DIR/include -I $MESOS_HOME_DIR/src -I $MESOS_HOME_DIR/build/src -I $MESOS_HOME_DIR/3rdparty/libprocess/include -I $THIRD_PARTY/boost-1.53.0 -I$THIRD_PARTY/glog-0.3.3/src -I $THIRD_PARTY/stout/include -I $THIRD_PARTY/protobuf-2.5.0/src"
+MESOS_LIB_PATH="-L $MESOS_HOME_DIR/build/src/.libs"
 
-$COMPILER $HEADER_FILES -lmesos -std=c++11 -fPIC -shared ./FedAllocator/src/FedAllocator.cpp ./FedComm/src/FedComm.cpp -o libFedModules.so
+HEADER_FILES=" -I $MESOS_HOME_DIR/include -I $MESOS_HOME_DIR/src -I $MESOS_HOME_DIR/build/include -I $MESOS_HOME_DIR/build/src -I $UB_LIBPROCESS_PATH/include  -I $UB_LIBPROCESS_PATH/3rdparty/stout/include -I $UB_LIBPROCESS_PATH/3rdparty/stout/include -I $B_THIRD_PARTY/picojson-1.3.0 -I $B_THIRD_PARTY/boost-1.53.0 -I$B_THIRD_PARTY/glog-0.3.3/src -I $B_THIRD_PARTY/stout/include -I $B_THIRD_PARTY/protobuf-2.5.0/src"
+
+$COMPILER $HEADER_FILES $MESOS_LIB_PATH -lmesos -std=c++11 -fPIC -shared ./FedAllocator/src/FedAllocator.cpp ./FedComm/src/FedComm.cpp -o libFedModules.so
 
 if [ $? -eq 0 ]; then
-  echo -e "Code Compiled and created shared library (libFedModules.so) for you \n"
+  echo -e "\nCode Compiled SUCCESSFULLY and created shared library (libFedModules.so) for you \n"
 else
-  echo -e "Code Compilation End with ERROR\n"
+  echo -e "\nCode Compilation End with ERROR\n"
 fi

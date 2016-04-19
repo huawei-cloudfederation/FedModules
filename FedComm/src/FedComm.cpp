@@ -5,7 +5,7 @@
 FedCommunication :: FedCommunication()
 {
   fedCommSockfd = -1; 
-  portno = 0;
+  portno = 5555; // default port num from Gossiper to Fed Comm
   threadId = 0;
 }
 
@@ -16,9 +16,10 @@ FedCommunication :: ~FedCommunication()
 
   // cleanup activity
   pthread_exit(NULL);
-  pthread_mutex_destroy(&mutexFedOfferSuppressTable);
-  pthread_mutex_destroy(&mutexCondVarForFed);
-  pthread_cond_destroy(&condVarForFed);
+  close(fedCommSockfd);
+  //pthread_mutex_destroy(&mutexFedOfferSuppressTable);
+  //pthread_mutex_destroy(&mutexCondVarForFed);
+  //pthread_cond_destroy(&condVarForFed);
 }
 
 
@@ -34,8 +35,6 @@ void FedCommunication::OpenServerSocket()
   // Initialize socket structure
   bzero((char *) &fedComm_addr, sizeof(fedComm_addr));
 
-  portno = 5555; // default port num from Gossiper to Fed Comm
-
   fedComm_addr.sin_family = AF_INET;
   fedComm_addr.sin_addr.s_addr = INADDR_ANY;
   fedComm_addr.sin_port = htons(portno);
@@ -47,7 +46,7 @@ void FedCommunication::OpenServerSocket()
     return;
   }
 
-  LOG(INFO) << "FEDERATION: Server Socket(" << fedCommSockfd << ") Opened iand Binded Successfully";
+  LOG(INFO) << "FEDERATION: Server Socket(" << fedCommSockfd << ") Opened and Binded Successfully";
 
   // Create a thread to accept the client - Gossiper connection
   int tStatus = pthread_create(&threadId, NULL, PollFedGossiper, (void*) &fedCommSockfd);
@@ -67,19 +66,20 @@ void FedCommunication::OpenServerSocket()
 // then only it make sense to send signal to Fed Alloc Module
 bool ParseGossiperMessage(char* gossiper_info)
 {
-  stringstream str(gossiper_info);
-  stringstream json;
-  string token;
+  std::stringstream str(gossiper_info);
+  std::stringstream json;
+  std::string token;
   bool updated = false;
 
   json << "[";
 
-  pthread_mutex_lock(&mutexFedOfferSuppressTable);
+  //pthread_mutex_lock(&mutexFedOfferSuppressTable);
+  mutexFedOfferSuppressTable.lock(); // mutex lock for Table
 
   while (str >> token)
   {
     int sep = token.find(':');
-    string fId(token, 0, sep);
+    std::string fId(token, 0, sep);
 
     bool fedFlag;
     if (fedOfferSuppressTable.find(fId) != fedOfferSuppressTable.end())
@@ -94,7 +94,8 @@ bool ParseGossiperMessage(char* gossiper_info)
     json << " { " << fId << " : " << fedFlag << " } ";
   }
 
-  pthread_mutex_unlock(&mutexFedOfferSuppressTable);
+  //pthread_mutex_unlock(&mutexFedOfferSuppressTable);
+  mutexFedOfferSuppressTable.unlock(); // mutex unlock for Table
 
   json << "]";
   if(updated) LOG(INFO) << "FEDERATION: Parsed Gossiper Info ==> " << json.str();
@@ -108,7 +109,8 @@ void ParseGossiperMsgSendSignal(int gossiperSockfd, unsigned int MsgLen, bool &n
   char* gossiper_info = new char[MsgLen];
   int numChar = read(gossiperSockfd, gossiper_info, MsgLen);
 
-  pthread_mutex_lock(&mutexCondVarForFed);
+  //pthread_mutex_lock(&mutexCondVarForFed);
+  mutexCondVarForFed.lock(); // mutex lock for Table
 
   //LOG(INFO) << "FEDERATION: Gossiper table: Will Parse Now";
   bool isUpdated = ParseGossiperMessage(gossiper_info);
@@ -122,13 +124,14 @@ void ParseGossiperMsgSendSignal(int gossiperSockfd, unsigned int MsgLen, bool &n
      if(isUpdated)
      {
         LOG(INFO) << "FEDERATION: Now table update signal will be sent to Fed Alloc";
-        pthread_cond_signal(&condVarForFed);
+        //pthread_cond_signal(&condVarForFed);
+        condVarForFed.notify_one();
      }
      notFirstTime = true;
   }
 
-  pthread_mutex_unlock(&mutexCondVarForFed);
-
+  //pthread_mutex_unlock(&mutexCondVarForFed);
+  mutexCondVarForFed.unlock(); // mutex unlock for Table
 }
 
 
@@ -217,6 +220,7 @@ void* PollFedGossiper(void* servSockfd)
        LOG(INFO) << "FEDERATION: Gossiper (Machine Name : " << clntName << " and port # " << port << ") established connection with Fed Comm Module" ;
        GetFrameworkInfoFromGossiper(gossiperSockfd);
        LOG(INFO) << "FEDERATION: Connection with Gossiper is LOST, will wait for new connection";
+       close(gossiperSockfd);
     }
     else
       LOG(ERROR) << "FEDERATION-Error: Connecting to the gossiper machine " << clntName << " and port # " << port;
@@ -229,6 +233,7 @@ void* PollFedGossiper(void* servSockfd)
 static Anonymous* createFedCommunicator(const Parameters& parameters)
 {
   auto obj = new FedCommunication();
+  if( obj != NULL)
   LOG(INFO) << "FEDERATION: Fed Comm Module is created and will be loaded";
   obj->OpenServerSocket();
   return obj;
