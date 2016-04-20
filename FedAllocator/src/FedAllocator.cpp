@@ -91,12 +91,12 @@ void FederationAllocatorProcess::addFramework(
     const FrameworkInfo& frameworkInfo,
     const hashmap<SlaveID, Resources>& used)
 {
-  mutexFedOfferSuppressTable.lock();
+  //mutexFedOfferSuppressTable.lock();
 
   fedOfferSuppressTable[frameworkId.value()].frameworkId = frameworkId;
   fedOfferSuppressTable[frameworkId.value()].supByFrameworkFlag = false;
 
-  mutexFedOfferSuppressTable.unlock();
+  //mutexFedOfferSuppressTable.unlock();
 
   // Call the parent class method
   HierarchicalDRFAllocatorProcess::addFramework(frameworkId, frameworkInfo, used);
