@@ -70,7 +70,8 @@ bool ParseGossiperMessage(char* gossiper_info)
 
   json << "[";
 
-  mutexFedOfferSuppressTable.lock(); // mutex lock for Table
+  std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
+  //mutexFedOfferSuppressTable.lock(); // mutex lock for Table
 
   while (str >> token)
   {
@@ -104,7 +105,8 @@ void ParseGossiperMsgSendSignal(int gossiperSockfd, unsigned int MsgLen, bool &n
   char* gossiper_info = new char[MsgLen];
   int numChar = read(gossiperSockfd, gossiper_info, MsgLen);
 
-  mutexCondVarForFed.lock(); // mutex lock for Table
+  std::unique_lock <std::mutex> mutexCondVarForFed(CondVarForFed);
+  //mutexCondVarForFed.lock(); // mutex lock for Table
 
   bool isUpdated = ParseGossiperMessage(gossiper_info);
 
@@ -117,12 +119,13 @@ void ParseGossiperMsgSendSignal(int gossiperSockfd, unsigned int MsgLen, bool &n
      if(isUpdated)
      {
         LOG(INFO) << "FEDERATION: Now table update signal will be sent to Fed Alloc";
+        mutexCondVarForFed.unlock(); // mutex unlock for Table
         condVarForFed.notify_one();
      }
      notFirstTime = true;
   }
 
-  mutexCondVarForFed.unlock(); // mutex unlock for Table
+  //if(!isUpdated) mutexCondVarForFed.unlock(); // mutex unlock for Table
 }
 
 

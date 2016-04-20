@@ -37,7 +37,8 @@ void FederationAllocatorProcess::ApplyFilters()
   while (1)
   {
     // wait for cond var to be signalled
-    mutexCondVarForFed.lock();
+    LOG(INFO) << "FEDERATION: Received update signal from Fed Communicator";
+    std::unique_lock <std::mutex> mutexCondVarForFed(CondVarForFed);
     condVarForFed.wait(mutexCondVarForFed);
 
     LOG(INFO) << "FEDERATION: Received update signal from Fed Communicator";
@@ -47,7 +48,8 @@ void FederationAllocatorProcess::ApplyFilters()
     else
 	LOG(INFO) << "FEDERATION: Total Number of FRAMEWORKs registered = " << fedOfferSuppressTable.size();
 
-    mutexFedOfferSuppressTable.lock(); // mutex lock for Table
+    std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
+    //mutexFedOfferSuppressTable.lock(); // mutex lock for Table
 
     for(auto& fedTableData : fedOfferSuppressTable)
     {
@@ -91,7 +93,8 @@ void FederationAllocatorProcess::addFramework(
     const FrameworkInfo& frameworkInfo,
     const hashmap<SlaveID, Resources>& used)
 {
-  mutexFedOfferSuppressTable.lock();
+  std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
+  //mutexFedOfferSuppressTable.lock();
 
   fedOfferSuppressTable[frameworkId.value()].frameworkId = frameworkId;
   fedOfferSuppressTable[frameworkId.value()].supByFrameworkFlag = false;
@@ -108,7 +111,8 @@ void FederationAllocatorProcess::addFramework(
 // Extended Remove Framework Method, which is invoked by Mesos Master
 void FederationAllocatorProcess::removeFramework(const FrameworkID& frameworkId)
 {
-  mutexFedOfferSuppressTable.lock();
+  std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
+  //mutexFedOfferSuppressTable.lock();
 
   fedOfferSuppressTable.erase(frameworkId.value());
 
@@ -126,7 +130,8 @@ void FederationAllocatorProcess::suppressOffers(const FrameworkID& frameworkId)
 {
   CHECK(initialized);
 
-  mutexFedOfferSuppressTable.lock();
+  std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
+  //mutexFedOfferSuppressTable.lock();
 
   fedOfferSuppressTable[frameworkId.value()].supByFrameworkFlag = true;
 
@@ -142,7 +147,8 @@ void FederationAllocatorProcess::suppressOffers(const FrameworkID& frameworkId)
 // Extended Revive Offer Method, which is invoked by Framework
 void FederationAllocatorProcess::reviveOffers(const FrameworkID& frameworkId)
 {
-  mutexFedOfferSuppressTable.lock();
+  std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
+  //mutexFedOfferSuppressTable.lock();
 
   fedOfferSuppressTable[frameworkId.value()].supByFrameworkFlag = false;
 
