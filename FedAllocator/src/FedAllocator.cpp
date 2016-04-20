@@ -49,7 +49,6 @@ void FederationAllocatorProcess::ApplyFilters()
 	LOG(INFO) << "FEDERATION: Total Number of FRAMEWORKs registered = " << fedOfferSuppressTable.size();
 
     std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
-    //mutexFedOfferSuppressTable.lock(); // mutex lock for Table
 
     for(auto& fedTableData : fedOfferSuppressTable)
     {
@@ -94,7 +93,6 @@ void FederationAllocatorProcess::addFramework(
     const hashmap<SlaveID, Resources>& used)
 {
   std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
-  //mutexFedOfferSuppressTable.lock();
 
   fedOfferSuppressTable[frameworkId.value()].frameworkId = frameworkId;
   fedOfferSuppressTable[frameworkId.value()].supByFrameworkFlag = false;
@@ -112,7 +110,6 @@ void FederationAllocatorProcess::addFramework(
 void FederationAllocatorProcess::removeFramework(const FrameworkID& frameworkId)
 {
   std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
-  //mutexFedOfferSuppressTable.lock();
 
   fedOfferSuppressTable.erase(frameworkId.value());
 
@@ -131,7 +128,6 @@ void FederationAllocatorProcess::suppressOffers(const FrameworkID& frameworkId)
   CHECK(initialized);
 
   std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
-  //mutexFedOfferSuppressTable.lock();
 
   fedOfferSuppressTable[frameworkId.value()].supByFrameworkFlag = true;
 
@@ -148,7 +144,6 @@ void FederationAllocatorProcess::suppressOffers(const FrameworkID& frameworkId)
 void FederationAllocatorProcess::reviveOffers(const FrameworkID& frameworkId)
 {
   std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
-  //mutexFedOfferSuppressTable.lock();
 
   fedOfferSuppressTable[frameworkId.value()].supByFrameworkFlag = false;
 

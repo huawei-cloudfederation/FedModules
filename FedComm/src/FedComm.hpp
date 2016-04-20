@@ -24,11 +24,9 @@ typedef enum
 
 std::condition_variable condVarForFed;
 std::mutex CondVarForFed;
-//std::unique_lock <std::mutex> mutexCondVarForFed(CondVarForFed);
 
 std::map <std::string, Suppress_T> fedOfferSuppressTable;
 std::mutex FedOfferSuppressTable;
-//std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
 
 // Forward declaration for a thread function
 void* PollFedGossiper(void*);

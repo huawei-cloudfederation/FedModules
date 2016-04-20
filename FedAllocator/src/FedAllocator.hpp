@@ -13,13 +13,11 @@ using mesos::master::allocator::Allocator;
 extern std::condition_variable condVarForFed; 
 // Associated mutex variable for Conditional Variable
 extern std::mutex                      CondVarForFed; 
-//extern std::unique_lock <std::mutex>   mutexCondVarForFed; 
 
 // Table of Suppressed Offers for a Framework by Federation
 extern std::map <std::string, Suppress_T>  fedOfferSuppressTable; 
 // Mutex Variable to lock the Suppressed Offer Table
 extern std::mutex                     FedOfferSuppressTable; 
-//extern std::unique_lock <std::mutex>  mutexFedOfferSuppressTable; 
 
 
 // Inherited/Extended Hierarchical DRF Allocator class

@@ -71,7 +71,6 @@ bool ParseGossiperMessage(char* gossiper_info)
   json << "[";
 
   std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
-  //mutexFedOfferSuppressTable.lock(); // mutex lock for Table
 
   while (str >> token)
   {
@@ -106,7 +105,6 @@ void ParseGossiperMsgSendSignal(int gossiperSockfd, unsigned int MsgLen, bool &n
   int numChar = read(gossiperSockfd, gossiper_info, MsgLen);
 
   std::unique_lock <std::mutex> mutexCondVarForFed(CondVarForFed);
-  //mutexCondVarForFed.lock(); // mutex lock for Table
 
   bool isUpdated = ParseGossiperMessage(gossiper_info);
 
@@ -125,6 +123,7 @@ void ParseGossiperMsgSendSignal(int gossiperSockfd, unsigned int MsgLen, bool &n
      notFirstTime = true;
   }
 
+  // This needs to be tested properly, to activated below line, I am not sure now
   //if(!isUpdated) mutexCondVarForFed.unlock(); // mutex unlock for Table
 }
 
