@@ -143,41 +143,47 @@ void GetFrameworkInfoFromGossiper(int gossiperSockfd)
     // Read message type
     int numChar = read(gossiperSockfd, &MsgType, 1);
 
+    switch(MsgType)
+    {
+       case MSG_TYPE_ACK: 
+	    break;
+
+       case MSG_TYPE_HEARTBEAT:
+	    numChar = write(gossiperSockfd,(void *) &ack,1);
+	    LOG(INFO) << "FEDERATION: Sent Heart Beat to Gossiper";
+	    break;
+
+       case MSG_TYPE_DATA:
+	    // Read the length of payload 
+            numChar = read(gossiperSockfd, &buf, 4);
+            MsgLen = ntohl(buf);
+
+            // when framework is not running Gossiper is sending zero info
+            if(MsgLen <= 0 || numChar <= 0)
+            {
+               LOG(WARNING) << "FEDERATION: Looks like Framework is NOT running, so Gossiper sending BLANK info";
+               continue;
+            }
+
+            // For the first time table does not have anything
+            if(fedOfferSuppressTable.size() <= 0 && notFirstTime == true)
+            {
+               LOG(WARNING) << "FEDERATION: Looks like Framework is NOT running, so Gossiper sending OLD info";
+               continue;
+            }
+
+            // Read the count of frameworks
+            numChar = read(gossiperSockfd, &buf, 4);
+            MsgCnt = ntohl(buf);
+
+            ParseGossiperMsgSendSignal(gossiperSockfd, MsgLen, notFirstTime);
+	    break;
+
+    }
+
     if (MsgType == MSG_TYPE_ACK && numChar == 0)
     {
       break; // When there is no response from Gossiper to Fed Comm
-    }
-    else if (MsgType == MSG_TYPE_HEARTBEAT)
-    {
-       numChar = write(gossiperSockfd,(void *) &ack,1);
-       LOG(INFO) << "FEDERATION: Sent Heart Beat to Gossiper";
-    }
-    else if (MsgType == MSG_TYPE_DATA) // If data is sent by the Gossiper
-    {
-       // Read the length of payload
-       numChar = read(gossiperSockfd, &buf, 4);
-       MsgLen = ntohl(buf);
-
-       // when framework is not running Gossiper is sending zero info
-       if(MsgLen <= 0 || numChar <= 0)
-       {
-	 LOG(WARNING) << "FEDERATION: Looks like Framework is NOT running, so Gossiper sending BLANK info";
-	 continue;
-       }
-
-       // For the first time table does not have anything
-       if(fedOfferSuppressTable.size() <= 0 && notFirstTime == true)
-       {
-	 LOG(WARNING) << "FEDERATION: Looks like Framework is NOT running, so Gossiper sending OLD info";
-	 continue;
-       }
-
-       // Read the count of frameworks
-       numChar = read(gossiperSockfd, &buf, 4);
-       MsgCnt = ntohl(buf);
-
-       ParseGossiperMsgSendSignal(gossiperSockfd, MsgLen, notFirstTime);
-
     }
   } // while LOP ends here
 
