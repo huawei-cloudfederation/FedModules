@@ -17,6 +17,7 @@ FedCommunication :: ~FedCommunication()
   // cleanup activity
   pthread_exit(NULL);
   close(fedCommSockfd);
+  fedCommSockfd = 0;
 }
 
 
@@ -214,6 +215,7 @@ void* PollFedGossiper(void* servSockfd)
        GetFrameworkInfoFromGossiper(gossiperSockfd);
        LOG(INFO) << "FEDERATION: Connection with Gossiper is LOST, will wait for new connection";
        close(gossiperSockfd);
+       gossiperSockfd = 0;
     }
     else
       LOG(ERROR) << "FEDERATION-Error: Connecting to the gossiper machine " << clntName << " and port # " << port;
