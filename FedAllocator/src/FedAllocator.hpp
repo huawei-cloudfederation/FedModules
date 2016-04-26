@@ -6,21 +6,25 @@
 
 #include "../../Fed_Common.hpp"
 
+
 using namespace mesos::internal::master::allocator;
 using mesos::master::allocator::Allocator;
 
-// Conditional Variable to get to know the table update
-extern std::condition_variable condVarForFed; 
-// Associated mutex variable for Conditional Variable
-extern std::mutex                      CondVarForFed; 
 
-// Table of Suppressed Offers for a Framework by Federation
-extern std::map <std::string, Suppress_T>  fedOfferSuppressTable; 
-// Mutex Variable to lock the Suppressed Offer Table
-extern std::mutex                     FedOfferSuppressTable; 
+/*
+Extern declaraions
+*/
+// Condition-Variable used for signaling the update in fedOfferSuppressTable
+// and the Mutex associated with Condition-Variable
+extern std::condition_variable  condVarForFed;
+extern std::mutex               CondVarForFed;
+
+// Table of Suppress-offers info for the registered Frameworks
+extern std::map <std::string, Suppress_T>   fedOfferSuppressTable; 
+// Mutex to lock the fedOfferSuppressTable 
+extern std::mutex                           FedOfferSuppressTable; 
 
 
-// Inherited/Extended Hierarchical DRF Allocator class
 class FederationAllocatorProcess : public HierarchicalDRFAllocatorProcess
 {
 public:

@@ -1,7 +1,9 @@
 #include "FedComm.hpp"
 #include <glog/logging.h>
 
-
+/*
+Constructor
+*/
 FedCommunication :: FedCommunication()
 {
   fedCommSockfd = -1; 
@@ -10,6 +12,9 @@ FedCommunication :: FedCommunication()
 }
 
 
+/*
+Destructor
+*/
 FedCommunication :: ~FedCommunication()
 {
   LOG(INFO) << "FEDERATION: FedCommunication Closing Now (Destructor called)";
@@ -20,6 +25,8 @@ FedCommunication :: ~FedCommunication()
 }
 
 
+/*
+*/
 void FedCommunication::OpenServerSocket()
 {
   fedCommSockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -99,6 +106,8 @@ bool ParseGossiperMessage(char* gossiper_info)
 }
 
 
+/*
+*/
 void ParseGossiperMsgSendSignal(int gossiperSockfd, unsigned int MsgLen, bool &notFirstTime)
 {
   char* gossiper_info = new char[MsgLen];
@@ -128,6 +137,8 @@ void ParseGossiperMsgSendSignal(int gossiperSockfd, unsigned int MsgLen, bool &n
 }
 
 
+/*
+*/
 void GetFrameworkInfoFromGossiper(int gossiperSockfd)
 {
   unsigned int MsgLen, MsgCnt, MsgType, buf;
@@ -149,41 +160,42 @@ void GetFrameworkInfoFromGossiper(int gossiperSockfd)
     }
     else if (MsgType == MSG_TYPE_HEARTBEAT)
     {
-       numChar = write(gossiperSockfd,(void *) &ack,1);
-       LOG(INFO) << "FEDERATION: Sent Heart Beat to Gossiper";
+      numChar = write(gossiperSockfd,(void *) &ack,1);
+      LOG(INFO) << "FEDERATION: Sent Heart Beat to Gossiper";
     }
     else if (MsgType == MSG_TYPE_DATA) // If data is sent by the Gossiper
     {
        // Read the length of payload
-       numChar = read(gossiperSockfd, &buf, 4);
-       MsgLen = ntohl(buf);
+      numChar = read(gossiperSockfd, &buf, 4);
+      MsgLen = ntohl(buf);
 
-       // when framework is not running Gossiper is sending zero info
-       if(MsgLen <= 0 || numChar <= 0)
-       {
-	 LOG(WARNING) << "FEDERATION: Looks like Framework is NOT running, so Gossiper sending BLANK info";
-	 continue;
-       }
+      // when framework is not running Gossiper is sending zero info
+      if(MsgLen <= 0 || numChar <= 0)
+      {
+        LOG(WARNING) << "FEDERATION: Looks like Framework is NOT running, so Gossiper sending BLANK info";
+        continue;
+      }
 
-       // For the first time table does not have anything
-       if(fedOfferSuppressTable.size() <= 0 && notFirstTime == true)
-       {
-	 LOG(WARNING) << "FEDERATION: Looks like Framework is NOT running, so Gossiper sending OLD info";
-	 continue;
-       }
+      // For the first time table does not have anything
+      if(fedOfferSuppressTable.size() <= 0 && notFirstTime == true)
+      {
+        LOG(WARNING) << "FEDERATION: Looks like Framework is NOT running, so Gossiper sending OLD info";
+        continue;
+      }
 
-       // Read the count of frameworks
-       numChar = read(gossiperSockfd, &buf, 4);
-       MsgCnt = ntohl(buf);
+      // Read the count of frameworks
+      numChar = read(gossiperSockfd, &buf, 4);
+      MsgCnt = ntohl(buf);
 
-       ParseGossiperMsgSendSignal(gossiperSockfd, MsgLen, notFirstTime);
-
+      ParseGossiperMsgSendSignal(gossiperSockfd, MsgLen, notFirstTime);
     }
   } // while LOP ends here
-
 }
 
 
+/*
+Thread function
+*/
 void* PollFedGossiper(void* servSockfd)
 {
   int gossiperSockfd;
@@ -205,7 +217,7 @@ void* PollFedGossiper(void* servSockfd)
     gossiperSockfd = accept(fedCommSockfd, (struct sockaddr *) &gossiper_addr, &cliLen);
 
     char clntName[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET,&gossiper_addr.sin_addr.s_addr,clntName,sizeof(clntName));
+    inet_ntop(AF_INET, &gossiper_addr.sin_addr.s_addr, clntName, sizeof(clntName));
     unsigned int port = ntohs(gossiper_addr.sin_port);
 
     if(gossiperSockfd > 0)
@@ -216,18 +228,21 @@ void* PollFedGossiper(void* servSockfd)
        close(gossiperSockfd);
     }
     else
+    {
       LOG(ERROR) << "FEDERATION-Error: Connecting to the gossiper machine " << clntName << " and port # " << port;
-
+    }
   }
-
 }
 
 
+/*
+Anonymous module creation
+*/
 static Anonymous* createFedCommunicator(const Parameters& parameters)
 {
   auto obj = new FedCommunication();
   if( obj != NULL)
-  LOG(INFO) << "FEDERATION: Fed Comm Module is created and will be loaded";
+  LOG(INFO) << "FEDERATION: Created the module mesos_fed_comm_module";
   obj->OpenServerSocket();
   return obj;
 }
@@ -242,3 +257,4 @@ mesos::modules::Module<Anonymous> mesos_fed_comm_module(
   "Mesos Federation Communication Module.",
   NULL,
   createFedCommunicator);
+

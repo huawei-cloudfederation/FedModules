@@ -17,9 +17,10 @@ using namespace mesos;
 
 typedef struct
 {
-  mesos::FrameworkID frameworkId; // To store the framework id of registered framework (to mesos)
-  bool supByFrameworkFlag;                 // Flag: Suppressed by Framwork
-  bool supByFederationFlag;                // Flag: Suppressed by Federation
+  mesos::FrameworkID frameworkId; // framework-id
+  bool supByFrameworkFlag;        // Flag: Suppressed by Framwork
+  bool supByFederationFlag;       // Flag: Suppressed by Federation
+
 } Suppress_T;
 
 

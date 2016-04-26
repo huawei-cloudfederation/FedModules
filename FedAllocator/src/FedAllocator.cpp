@@ -7,6 +7,9 @@
 void* WaitForFilterUpdate(void* arg);
 
 
+/*
+Constructor
+*/
 FederationAllocatorProcess::FederationAllocatorProcess()
 {
   threadId = 0;
@@ -14,6 +17,9 @@ FederationAllocatorProcess::FederationAllocatorProcess()
 }
 
 
+/*
+Destructor
+*/
 FederationAllocatorProcess::~FederationAllocatorProcess()
 {
   LOG(INFO) << "FEDERATION: Allocator Process Will End Now (Destructor called)";
@@ -22,6 +28,22 @@ FederationAllocatorProcess::~FederationAllocatorProcess()
 }
 
 
+/*
+*/
+void FederationAllocatorProcess::InitilizeThread()
+{
+  int status =  pthread_create(&threadId, NULL, WaitForFilterUpdate, this);
+
+  if(status > 0)
+  {
+    LOG(ERROR) << "EFEDERATION: Error, could NOT create the thread WaitForFilterUpdate";
+  }
+}
+
+
+/*
+Thread function
+*/
 void* WaitForFilterUpdate(void* arg)
 {
   FederationAllocatorProcess *obj = (FederationAllocatorProcess*)arg;
@@ -29,24 +51,25 @@ void* WaitForFilterUpdate(void* arg)
 }
 
 
+/*
+*/
 void FederationAllocatorProcess::ApplyFilters()
 {
-  LOG(INFO) << "FEDERATION: Fed Alloc Thread is Created";
+  LOG(INFO) << "FEDERATION: ApplyFilters method called";
 
   // Read the gossiper table and call the suppressOffers OR reviveOffers accordingly.
   while (1)
   {
     // wait for cond var to be signalled
-    LOG(INFO) << "FEDERATION: Received update signal from Fed Communicator";
     std::unique_lock <std::mutex> mutexCondVarForFed(CondVarForFed);
     condVarForFed.wait(mutexCondVarForFed);
 
     LOG(INFO) << "FEDERATION: Received update signal from Fed Communicator";
 
     if(fedOfferSuppressTable.size() == 0)
-	LOG(WARNING) << "FEDERATION: No Framework is registered";
+      LOG(WARNING) << "FEDERATION: No Framework is registered";
     else
-	LOG(INFO) << "FEDERATION: Total Number of FRAMEWORKs registered = " << fedOfferSuppressTable.size();
+      LOG(INFO) << "FEDERATION: Total Number of FRAMEWORKs registered = " << fedOfferSuppressTable.size();
 
     std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
 
@@ -69,7 +92,7 @@ void FederationAllocatorProcess::ApplyFilters()
         if (suppress)
         {
           HierarchicalDRFAllocatorProcess::suppressOffers(fwId);
-          LOG(INFO) << "FEDERATION: Suppresed framework Id: " << frmwkId;
+          LOG(INFO) << "FEDERATION: Suppressed framework Id: " << frmwkId;
         }
         else
         {
@@ -85,6 +108,11 @@ void FederationAllocatorProcess::ApplyFilters()
   } // while LOOP ends here
 }
 
+
+
+/*
+Overridden methods
+*/
 
 // Extended Add Framework Method, which is invoked by Mesos Master
 void FederationAllocatorProcess::addFramework(
@@ -125,8 +153,6 @@ void FederationAllocatorProcess::removeFramework(const FrameworkID& frameworkId)
 // Extended Suppress Offer Method, which is invoked by Framework
 void FederationAllocatorProcess::suppressOffers(const FrameworkID& frameworkId)
 {
-  CHECK(initialized);
-
   std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
 
   fedOfferSuppressTable[frameworkId.value()].supByFrameworkFlag = true;
@@ -159,18 +185,9 @@ void FederationAllocatorProcess::reviveOffers(const FrameworkID& frameworkId)
 }
 
 
-void FederationAllocatorProcess::InitilizeThread()
-{
-  int tStatus =  pthread_create(&threadId, NULL, WaitForFilterUpdate, this);
-
-  if(tStatus > 0)
-  {
-    LOG(ERROR) << "Error: Thread creation is unsuccessfull";
-  }
-
-}
-
-
+/*
+Allocator Module creation
+*/
 static Allocator* createFederationAllocator(const Parameters& parameters)
 {
   Try<Allocator*> allocator = FederationAllocator::create();
@@ -180,10 +197,8 @@ static Allocator* createFederationAllocator(const Parameters& parameters)
      return NULL;
   }
 
-  auto alocObj = allocator.get();
-
-  LOG(INFO) << "FEDERATION: Fed Allocator Module created, and will be loaded to mesos";
-  return alocObj;
+  LOG(INFO) << "FEDERATION: Created the module mesos_fed_allocator_module";
+  return allocator.get();
 }
 
 
