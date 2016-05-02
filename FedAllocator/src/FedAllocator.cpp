@@ -123,10 +123,12 @@ void FederationAllocatorProcess::addFramework(
   std::unique_lock <std::mutex> mutexFedOfferSuppressTable(FedOfferSuppressTable);
 
   fedOfferSuppressTable[frameworkId.value()].frameworkId = frameworkId;
-  fedOfferSuppressTable[frameworkId.value()].supByFrameworkFlag = false;
+  fedOfferSuppressTable[frameworkId.value()].supByFrameworkFlag = true;
+  fedOfferSuppressTable[frameworkId.value()].supByFederationFlag = false;
 
   mutexFedOfferSuppressTable.unlock();
 
+  HierarchicalDRFAllocatorProcess::suppressOffers(frameworkId);
   // Call the parent class method
   HierarchicalDRFAllocatorProcess::addFramework(frameworkId, frameworkInfo, used);
 
