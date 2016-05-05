@@ -11,8 +11,7 @@
 
 using mesos::modules::Anonymous;
 
-// Types of Messages Sent over TCP/IP connection
-// Between Gossiper and Fed Comm module
+// Types of Messages Sent over TCP/IP connection between Gossiper and Fed Comm module
 typedef enum
 {
   MSG_TYPE_ACK,
@@ -22,13 +21,14 @@ typedef enum
 } MsgType_E;
 
 
-std::condition_variable condVarForFed;
-std::mutex CondVarForFed;
+std::condition_variable             condVarForFed;
+std::mutex                          CondVarForFed;
 
-std::map <std::string, Suppress_T> fedOfferSuppressTable;
-std::mutex FedOfferSuppressTable;
+std::map <std::string, Suppress_T>  fedOfferSuppressTable;
+std::mutex                          FedOfferSuppressTable;
 
-// Forward declaration for a thread function
+
+// Forward declarations 
 void* PollFedGossiper(void*);
 
 
